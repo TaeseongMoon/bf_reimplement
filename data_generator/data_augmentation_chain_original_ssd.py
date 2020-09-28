@@ -34,7 +34,7 @@ class SSDRandomCrop:
     https://arxiv.org/abs/1512.02325
     '''
 
-    def __init__(self, labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+    def __init__(self, labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             labels_format (dict, optional): A dictionary that defines which index in the last axis of the labels
@@ -108,7 +108,7 @@ class SSDExpand:
     https://arxiv.org/abs/1512.02325
     '''
 
-    def __init__(self, background=(123, 117, 104), labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+    def __init__(self, background=(123, 117, 104), labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             background (list/tuple, optional): A 3-tuple specifying the RGB color value of the
@@ -212,10 +212,10 @@ class SSDDataAugmentation:
     '''
 
     def __init__(self,
-                 img_height=300,
-                 img_width=300,
+                 img_height=128,
+                 img_width=128,
                  background=(123, 117, 104),
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             height (int): The desired height of the output images in pixels.
@@ -266,7 +266,8 @@ class SSDDataAugmentation:
         self.resize.labels_format = self.labels_format
 
         inverters = []
-
+        # import pdb
+        # pdb.set_trace()
         for transform in self.sequence:
             if return_inverter and ('return_inverter' in inspect.signature(transform).parameters):
                 image, labels, inverter = transform(image, labels, return_inverter=True)

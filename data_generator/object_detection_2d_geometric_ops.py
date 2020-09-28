@@ -34,7 +34,7 @@ class Resize:
                  width,
                  interpolation_mode=cv2.INTER_LINEAR,
                  box_filter=None,
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             height (int): The desired height of the output images in pixels.
@@ -66,7 +66,17 @@ class Resize:
         ymin = self.labels_format['ymin']
         xmax = self.labels_format['xmax']
         ymax = self.labels_format['ymax']
-
+        kp1_x = self.labels_format['kp1_x']
+        kp1_y = self.labels_format['kp1_y']
+        kp2_x = self.labels_format['kp2_x']
+        kp2_y = self.labels_format['kp2_y']
+        kp3_x = self.labels_format['kp3_x']
+        kp3_y = self.labels_format['kp3_y']
+        kp4_x = self.labels_format['kp4_x']
+        kp4_y = self.labels_format['kp4_y']
+        kp5_x = self.labels_format['kp5_x']
+        kp5_y = self.labels_format['kp5_y']
+        
         image = cv2.resize(image,
                            dsize=(self.out_width, self.out_height),
                            interpolation=self.interpolation_mode)
@@ -74,8 +84,8 @@ class Resize:
         if return_inverter:
             def inverter(labels):
                 labels = np.copy(labels)
-                labels[:, [ymin+1, ymax+1]] = np.round(labels[:, [ymin+1, ymax+1]] * (img_height / self.out_height), decimals=0)
-                labels[:, [xmin+1, xmax+1]] = np.round(labels[:, [xmin+1, xmax+1]] * (img_width / self.out_width), decimals=0)
+                labels[:, [ymin+1, ymax+1, kp1_y+1, kp2_y+1, kp3_y+1, kp4_y+1, kp5_y+1]] = np.round(labels[:, [ymin+1, ymax+1, kp1_y+1, kp2_y+1, kp3_y+1, kp4_y+1, kp5_y+1]] * (img_height / self.out_height), decimals=0)
+                labels[:, [xmin+1, xmax+1, kp1_x+1, kp2_x+1, kp3_x+1, kp4_x+1, kp5_x+1]] = np.round(labels[:, [xmin+1, xmax+1, kp1_x+1, kp2_x+1, kp3_x+1, kp4_x+1, kp5_x+1]] * (img_width / self.out_width), decimals=0)
                 return labels
 
         if labels is None:
@@ -85,8 +95,8 @@ class Resize:
                 return image
         else:
             labels = np.copy(labels)
-            labels[:, [ymin, ymax]] = np.round(labels[:, [ymin, ymax]] * (self.out_height / img_height), decimals=0)
-            labels[:, [xmin, xmax]] = np.round(labels[:, [xmin, xmax]] * (self.out_width / img_width), decimals=0)
+            labels[:, [ymin, ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] = np.round(labels[:, [ymin, ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] * (self.out_height / img_height), decimals=0)
+            labels[:, [xmin, xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] = np.round(labels[:, [xmin, xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] * (self.out_width / img_width), decimals=0)
 
             if not (self.box_filter is None):
                 self.box_filter.labels_format = self.labels_format
@@ -114,7 +124,7 @@ class ResizeRandomInterp:
                                       cv2.INTER_AREA,
                                       cv2.INTER_LANCZOS4],
                  box_filter=None,
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             height (int): The desired height of the output image in pixels.
@@ -153,7 +163,7 @@ class Flip:
     '''
     def __init__(self,
                  dim='horizontal',
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             dim (str, optional): Can be either of 'horizontal' and 'vertical'.
@@ -176,6 +186,16 @@ class Flip:
         ymin = self.labels_format['ymin']
         xmax = self.labels_format['xmax']
         ymax = self.labels_format['ymax']
+        kp1_x = self.labels_format['kp1_x']
+        kp1_y = self.labels_format['kp1_y']
+        kp2_x = self.labels_format['kp2_x']
+        kp2_y = self.labels_format['kp2_y']
+        kp3_x = self.labels_format['kp3_x']
+        kp3_y = self.labels_format['kp3_y']
+        kp4_x = self.labels_format['kp4_x']
+        kp4_y = self.labels_format['kp4_y']
+        kp5_x = self.labels_format['kp5_x']
+        kp5_y = self.labels_format['kp5_y']
 
         if self.dim == 'horizontal':
             image = image[:,::-1]
@@ -183,7 +203,7 @@ class Flip:
                 return image
             else:
                 labels = np.copy(labels)
-                labels[:, [xmin, xmax]] = img_width - labels[:, [xmax, xmin]]
+                labels[:, [xmin, xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] = img_width - labels[:, [xmax, xmin, kp2_x, kp1_x, kp3_x, kp5_x, kp4_x]]
                 return image, labels
         else:
             image = image[::-1]
@@ -191,7 +211,7 @@ class Flip:
                 return image
             else:
                 labels = np.copy(labels)
-                labels[:, [ymin, ymax]] = img_height - labels[:, [ymax, ymin]]
+                labels[:, [ymin, ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] = img_height - labels[:, [ymax, ymin, kp2_y, kp1_y, kp3_y, kp5_y, kp4_y]]
                 return image, labels
 
 class RandomFlip:
@@ -202,7 +222,7 @@ class RandomFlip:
     def __init__(self,
                  dim='horizontal',
                  prob=0.5,
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             dim (str, optional): Can be either of 'horizontal' and 'vertical'.
@@ -241,7 +261,7 @@ class Translate:
                  clip_boxes=True,
                  box_filter=None,
                  background=(0,0,0),
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             dy (float): The fraction of the image height by which to translate images along the
@@ -297,11 +317,21 @@ class Translate:
             ymin = self.labels_format['ymin']
             xmax = self.labels_format['xmax']
             ymax = self.labels_format['ymax']
+            kp1_x = self.labels_format['kp1_x']
+            kp1_y = self.labels_format['kp1_y']
+            kp2_x = self.labels_format['kp2_x']
+            kp2_y = self.labels_format['kp2_y']
+            kp3_x = self.labels_format['kp3_x']
+            kp3_y = self.labels_format['kp3_y']
+            kp4_x = self.labels_format['kp4_x']
+            kp4_y = self.labels_format['kp4_y']
+            kp5_x = self.labels_format['kp5_x']
+            kp5_y = self.labels_format['kp5_y']
 
             labels = np.copy(labels)
             # Translate the box coordinates to the translated image's coordinate system.
-            labels[:,[xmin,xmax]] += dx_abs
-            labels[:,[ymin,ymax]] += dy_abs
+            labels[:,[xmin,xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] += dx_abs
+            labels[:,[ymin,ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] += dy_abs
 
             # Compute all valid boxes for this patch.
             if not (self.box_filter is None):
@@ -311,8 +341,8 @@ class Translate:
                                          image_width=img_width)
 
             if self.clip_boxes:
-                labels[:,[ymin,ymax]] = np.clip(labels[:,[ymin,ymax]], a_min=0, a_max=img_height-1)
-                labels[:,[xmin,xmax]] = np.clip(labels[:,[xmin,xmax]], a_min=0, a_max=img_width-1)
+                labels[:,[ymin,ymax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] = np.clip(labels[:,[ymin,ymax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]], a_min=0, a_max=img_height-1)
+                labels[:,[xmin,xmax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] = np.clip(labels[:,[xmin,xmax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]], a_min=0, a_max=img_width-1)
 
             return image, labels
 
@@ -330,7 +360,7 @@ class RandomTranslate:
                  image_validator=None,
                  n_trials_max=3,
                  background=(0,0,0),
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             dy_minmax (list/tuple, optional): A 2-tuple `(min, max)` of non-negative floats that
@@ -401,6 +431,16 @@ class RandomTranslate:
             ymin = self.labels_format['ymin']
             xmax = self.labels_format['xmax']
             ymax = self.labels_format['ymax']
+            kp1_x = self.labels_format['kp1_x']
+            kp1_y = self.labels_format['kp1_y']
+            kp2_x = self.labels_format['kp2_x']
+            kp2_y = self.labels_format['kp2_y']
+            kp3_x = self.labels_format['kp3_x']
+            kp3_y = self.labels_format['kp3_y']
+            kp4_x = self.labels_format['kp4_x']
+            kp4_y = self.labels_format['kp4_y']
+            kp5_x = self.labels_format['kp5_x']
+            kp5_y = self.labels_format['kp5_y']
 
             # Override the preset labels format.
             if not self.image_validator is None:
@@ -424,8 +464,8 @@ class RandomTranslate:
                 else:
                     # Translate the box coordinates to the translated image's coordinate system.
                     new_labels = np.copy(labels)
-                    new_labels[:, [ymin, ymax]] += int(round(img_height * dy))
-                    new_labels[:, [xmin, xmax]] += int(round(img_width * dx))
+                    new_labels[:, [ymin, ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] += int(round(img_height * dy))
+                    new_labels[:, [xmin, xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] += int(round(img_width * dx))
 
                     # Check if the patch is valid.
                     if self.image_validator(labels=new_labels,
@@ -456,7 +496,7 @@ class Scale:
                  clip_boxes=True,
                  box_filter=None,
                  background=(0,0,0),
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             factor (float): The fraction of the image size by which to scale images. Must be positive.
@@ -487,7 +527,8 @@ class Scale:
     def __call__(self, image, labels=None):
 
         img_height, img_width = image.shape[:2]
-
+        import pdb
+        pdb.set_trace()
         # Compute the rotation matrix.
         M = cv2.getRotationMatrix2D(center=(img_width / 2, img_height / 2),
                                     angle=0,
@@ -507,6 +548,16 @@ class Scale:
             ymin = self.labels_format['ymin']
             xmax = self.labels_format['xmax']
             ymax = self.labels_format['ymax']
+            kp1_x = self.labels_format['kp1_x']
+            kp1_y = self.labels_format['kp1_y']
+            kp2_x = self.labels_format['kp2_x']
+            kp2_y = self.labels_format['kp2_y']
+            kp3_x = self.labels_format['kp3_x']
+            kp3_y = self.labels_format['kp3_y']
+            kp4_x = self.labels_format['kp4_x']
+            kp4_y = self.labels_format['kp4_y']
+            kp5_x = self.labels_format['kp5_x']
+            kp5_y = self.labels_format['kp5_y']
 
             labels = np.copy(labels)
             # Scale the bounding boxes accordingly.
@@ -515,8 +566,8 @@ class Scale:
             bottomrights = np.array([labels[:,xmax], labels[:,ymax], np.ones(labels.shape[0])])
             new_toplefts = (np.dot(M, toplefts)).T
             new_bottomrights = (np.dot(M, bottomrights)).T
-            labels[:,[xmin,ymin]] = np.round(new_toplefts, decimals=0).astype(np.int)
-            labels[:,[xmax,ymax]] = np.round(new_bottomrights, decimals=0).astype(np.int)
+            labels[:,[xmin, ymin, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] = np.round(new_toplefts, decimals=0).astype(np.int)
+            labels[:,[xmax, ymax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] = np.round(new_bottomrights, decimals=0).astype(np.int)
 
             # Compute all valid boxes for this patch.
             if not (self.box_filter is None):
@@ -526,8 +577,8 @@ class Scale:
                                          image_width=img_width)
 
             if self.clip_boxes:
-                labels[:,[ymin,ymax]] = np.clip(labels[:,[ymin,ymax]], a_min=0, a_max=img_height-1)
-                labels[:,[xmin,xmax]] = np.clip(labels[:,[xmin,xmax]], a_min=0, a_max=img_width-1)
+                labels[:,[ymin, ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] = np.clip(labels[:,[ymin, ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]], a_min=0, a_max=img_height-1)
+                labels[:,[xmin, xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] = np.clip(labels[:,[xmin, xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]], a_min=0, a_max=img_width-1)
 
             return image, labels
 
@@ -545,7 +596,7 @@ class RandomScale:
                  image_validator=None,
                  n_trials_max=3,
                  background=(0,0,0),
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             min_factor (float, optional): The minimum fraction of the image size by which to scale images.
@@ -604,7 +655,16 @@ class RandomScale:
             ymin = self.labels_format['ymin']
             xmax = self.labels_format['xmax']
             ymax = self.labels_format['ymax']
-
+            kp1_x = self.labels_format['kp1_x']
+            kp1_y = self.labels_format['kp1_y']
+            kp2_x = self.labels_format['kp2_x']
+            kp2_y = self.labels_format['kp2_y']
+            kp3_x = self.labels_format['kp3_x']
+            kp3_y = self.labels_format['kp3_y']
+            kp4_x = self.labels_format['kp4_x']
+            kp4_y = self.labels_format['kp4_y']
+            kp5_x = self.labels_format['kp5_x']
+            kp5_y = self.labels_format['kp5_y']
             # Override the preset labels format.
             if not self.image_validator is None:
                 self.image_validator.labels_format = self.labels_format

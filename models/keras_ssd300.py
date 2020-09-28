@@ -1,21 +1,15 @@
 '''
 A Keras port of the original Caffe SSD300 network.
-
 Copyright (C) 2018 Pierluigi Ferrari
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
    http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
-NOTICE: This file is a modified version by Viet Anh Nguyen (vietanh@vietanhdev.com)
 '''
 
 from __future__ import division
@@ -61,22 +55,17 @@ def ssd_300(image_size,
             return_predictor_sizes=False):
     '''
     Build a Keras model with SSD300 architecture, see references.
-
     The base network is a reduced atrous VGG-16, extended by the SSD architecture,
     as described in the paper.
-
     Most of the arguments that this function takes are only needed for the anchor
     box layers. In case you're training the network, the parameters passed here must
     be the same as the ones used to set up `SSDBoxEncoder`. In case you're loading
     trained weights, the parameters passed here must be the same as the ones used
     to produce the trained weights.
-
     Some of these arguments are explained in more detail in the documentation of the
     `SSDBoxEncoder` class.
-
     Note: Requires Keras v2.0 or later. Currently works only with the
     TensorFlow backend (v1.0 or later).
-
     Arguments:
         image_size (tuple): The input image size in the format `(height, width, channels)`.
         n_classes (int): The number of positive classes, e.g. 20 for Pascal VOC, 80 for MS COCO.
@@ -159,7 +148,6 @@ def ssd_300(image_size,
             you can always get their sizes easily via the Keras API, but it's convenient and less error-prone
             to get them this way. They are only relevant for training anyway (SSDBoxEncoder needs to know the
             spatial dimensions of the predictor layers), for inference you don't need them.
-
     Returns:
         model: The Keras SSD300 model.
         predictor_sizes (optional): A Numpy array containing the `(height, width)` portion
@@ -168,7 +156,6 @@ def ssd_300(image_size,
             the ground truth labels into tensors of identical structure as the
             output tensors of the model, which is in turn needed for the cost
             function.
-
     References:
         https://arxiv.org/abs/1512.02325v5
     '''
@@ -448,12 +435,12 @@ def ssd_300(image_size,
         raise ValueError("`mode` must be one of 'training', 'inference' or 'inference_fast', but received '{}'.".format(mode))
 
     if return_predictor_sizes:
-        predictor_sizes = np.array([conv4_3_norm_mbox_conf.shape[1:3],
-                                     fc7_mbox_conf.shape[1:3],
-                                     conv6_2_mbox_conf.shape[1:3],
-                                     conv7_2_mbox_conf.shape[1:3],
-                                     conv8_2_mbox_conf.shape[1:3],
-                                     conv9_2_mbox_conf.shape[1:3]])
+        predictor_sizes = np.array([conv4_3_norm_mbox_conf._keras_shape[1:3],
+                                     fc7_mbox_conf._keras_shape[1:3],
+                                     conv6_2_mbox_conf._keras_shape[1:3],
+                                     conv7_2_mbox_conf._keras_shape[1:3],
+                                     conv8_2_mbox_conf._keras_shape[1:3],
+                                     conv9_2_mbox_conf._keras_shape[1:3]])
         return model, predictor_sizes
     else:
         return model

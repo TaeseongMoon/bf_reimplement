@@ -280,9 +280,12 @@ def blazeface(image_size,
     boxes16x16 = Conv2D(n_boxes[0] * 4, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='boxes16x16')(blaze_face[0])
     boxes8x8 = Conv2D(n_boxes[1] * 4, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='boxes8x8')(blaze_face[1])
 
+    landmarks16x16 = Conv2D(n_boxes[0] * 10, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='landmarks16x16')(blaze_face[0])
+    landmarks8x8 = Conv2D(n_boxes[1] * 10, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='landmarks8x8')(blaze_face[1])
+    
     # Generate the anchor boxes
     # Output shape of `anchors`: `(batch, height, width, n_boxes, 8)`
-    anchors16x16 = AnchorBoxes(img_height, img_width, scales=scales[0],                 aspect_ratios=aspect_ratios[0], this_steps=steps[0], this_offsets=offsets[0],
+    anchors16x16 = AnchorBoxes(img_height, img_width, scales=scales[0], aspect_ratios=aspect_ratios[0], this_steps=steps[0], this_offsets=offsets[0],
                            clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors16x16')(boxes16x16)
     anchors8x8 = AnchorBoxes(img_height, img_width, scales=scales[1], aspect_ratios=aspect_ratios[1], this_steps=steps[1], this_offsets=offsets[1],
                            clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors8x8')(boxes8x8)
@@ -298,6 +301,9 @@ def blazeface(image_size,
     boxes16x16_reshaped = Reshape((-1, 4), name='boxes16x16_reshape')(boxes16x16)
     boxes8x8_reshaped = Reshape((-1, 4), name='boxes8x8_reshape')(boxes8x8)
 
+    landmarks16x16_reshaped = Reshape((-1, 10),name='landmarks16x16_reshape')(landmarks16x16)
+    landmarks8x8_reshaped = Reshape((-1, 10),name='landmarks8x8_reshape')(landmarks8x8)
+
     # Reshape the anchor box tensors, yielding 3D tensors of shape `(batch, height * width * n_boxes, 8)`
     anchors16x16_reshaped = Reshape((-1, 8), name='anchors16x16_reshape')(anchors16x16)
     anchors8x8_reshaped = Reshape((-1, 8), name='anchors8x8_reshape')(anchors8x8)
@@ -312,7 +318,8 @@ def blazeface(image_size,
     # Output shape of `boxes_concat`: (batch, n_boxes_total, 4)
     boxes_concat = Concatenate(axis=1, name='boxes_concat')([boxes16x16_reshaped,
                                                              boxes8x8_reshaped])
-
+    landmarks_concat = Concatenate(axis=1, name='landmarks_concat')([landmarks16x16_reshaped,
+                                                                     landmarks8x8_reshaped])
     # Output shape of `anchors_concat`: (batch, n_boxes_total, 8)
     anchors_concat = Concatenate(axis=1, name='anchors_concat')([anchors16x16_reshaped,
                                                                  anchors8x8_reshaped])
@@ -324,7 +331,7 @@ def blazeface(image_size,
 
     # Concatenate the class and box coordinate predictions and the anchors to one large predictions tensor
     # Output shape of `predictions`: (batch, n_boxes_total, n_classes + 4 + 8)
-    predictions = Concatenate(axis=2, name='predictions')([classes_softmax, boxes_concat, anchors_concat])
+    predictions = Concatenate(axis=2, name='predictions')([classes_softmax, boxes_concat, landmarks_concat ,anchors_concat])
 
     if mode == 'training':
         model = Model(inputs=x, outputs=predictions)

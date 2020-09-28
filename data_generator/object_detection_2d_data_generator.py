@@ -22,6 +22,7 @@ import inspect
 from collections import defaultdict
 import warnings
 import sklearn.utils
+import logging as log
 from copy import deepcopy
 from PIL import Image
 import cv2
@@ -87,7 +88,7 @@ class DataGenerator:
                  labels=None,
                  image_ids=None,
                  eval_neutral=None,
-                 labels_output_format=('class_id', 'xmin', 'ymin', 'xmax', 'ymax'),
+                 labels_output_format=('class_id', 'xmin', 'ymin', 'xmax', 'ymax','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y'),
                  verbose=True):
         '''
         Initializes the data generator. You can either load a dataset directly here in the constructor,
@@ -140,8 +141,19 @@ class DataGenerator:
                             'xmin': labels_output_format.index('xmin'),
                             'ymin': labels_output_format.index('ymin'),
                             'xmax': labels_output_format.index('xmax'),
-                            'ymax': labels_output_format.index('ymax')} # This dictionary is for internal use.
-
+                            'ymax': labels_output_format.index('ymax'),
+                            'kp1_x': labels_output_format.index('kp1_x'),
+                            'kp1_y': labels_output_format.index('kp1_y'),
+                            'kp2_x': labels_output_format.index('kp2_x'),
+                            'kp2_y': labels_output_format.index('kp2_y'),
+                            'kp3_x': labels_output_format.index('kp3_x'),
+                            'kp3_y': labels_output_format.index('kp3_y'),
+                            'kp4_x': labels_output_format.index('kp4_x'),
+                            'kp4_y': labels_output_format.index('kp4_y'),
+                            'kp5_x': labels_output_format.index('kp5_x'),
+                            'kp5_y': labels_output_format.index('kp5_y')
+                            } # This dictionary is for internal use.
+        
         self.dataset_size = 0 # As long as we haven't loaded anything yet, the dataset size is zero.
         self.load_images_into_memory = load_images_into_memory
         self.images = None # The only way that this list will not stay `None` is if `load_images_into_memory == True`.
@@ -308,7 +320,7 @@ class DataGenerator:
         self.labels_filename = labels_filename
         self.input_format = input_format
         self.include_classes = include_classes
-
+        
         # Before we begin, make sure that we have a labels_filename and an input_format
         if self.labels_filename is None or self.input_format is None:
             raise ValueError("`labels_filename` and/or `input_format` have not been set yet. You need to pass them as arguments.")
@@ -330,14 +342,14 @@ class DataGenerator:
                     box = [] # Store the box class and coordinates here
                     box.append(row[self.input_format.index('image_name')].strip()) # Select the image name column in the input format and append its content to `box`
                     for element in self.labels_output_format: # For each element in the output format (where the elements are the class ID and the four box coordinates)...
-                        box.append(int(row[self.input_format.index(element)].strip())) # ...select the respective column in the input format and append it to `box`.
+                        box.append(float(row[self.input_format.index(element)].strip())) # ...select the respective column in the input format and append it to `box`.
                     data.append(box)
 
         data = sorted(data) # The data needs to be sorted, otherwise the next step won't give the correct result
-
+        
         # Now that we've made sure that the data is sorted by file names,
         # we can compile the actual samples and labels lists
-
+        
         current_file = data[0][0] # The current image for which we're collecting the ground truth boxes
         current_image_id = data[0][0].split('.')[0] # The image ID will be the portion of the image name before the first dot.
         current_labels = [] # The list where we collect all ground truth boxes for a given image
@@ -393,7 +405,7 @@ class DataGenerator:
             for filename in it:
                 with Image.open(filename) as image:
                     self.images.append(np.array(image, dtype=np.uint8))
-
+        
         if ret: # In case we want to return these
             return self.images, self.filenames, self.labels, self.image_ids
 
@@ -500,10 +512,10 @@ class DataGenerator:
                         if exclude_difficult and (difficult == 1): continue
                         # Get the bounding box coordinates.
                         bndbox = obj.find('bndbox', recursive=False)
-                        xmin = int(bndbox.xmin.text)
-                        ymin = int(bndbox.ymin.text)
-                        xmax = int(bndbox.xmax.text)
-                        ymax = int(bndbox.ymax.text)
+                        xmin = float(bndbox.xmin.text)
+                        ymin = float(bndbox.ymin.text)
+                        xmax = float(bndbox.xmax.text)
+                        ymax = float(bndbox.ymax.text)
                         item_dict = {'folder': folder,
                                      'image_name': filename,
                                      'image_id': image_id,
@@ -1015,13 +1027,13 @@ class DataGenerator:
                 for filename in batch_filenames:
                     with Image.open(filename) as image:
                         batch_X.append(np.array(image, dtype=np.uint8))
-
+            
             # Get the labels for this batch (if there are any).
             if not (self.labels is None):
                 batch_y = deepcopy(self.labels[current:current+batch_size])
             else:
                 batch_y = None
-
+            
             if not (self.eval_neutral is None):
                 batch_eval_neutral = self.eval_neutral[current:current+batch_size]
             else:
@@ -1032,7 +1044,7 @@ class DataGenerator:
                 batch_image_ids = self.image_ids[current:current+batch_size]
             else:
                 batch_image_ids = None
-
+            
             if 'original_images' in returns:
                 batch_original_images = deepcopy(batch_X) # The original, unaltered images
             if 'original_labels' in returns:
@@ -1062,7 +1074,7 @@ class DataGenerator:
                 if transformations:
 
                     inverse_transforms = []
-
+                    
                     for transform in transformations:
 
                         if not (self.labels is None):
@@ -1087,7 +1099,7 @@ class DataGenerator:
                                 batch_X[i] = transform(batch_X[i])
 
                     batch_inverse_transforms.append(inverse_transforms[::-1])
-
+                
                 #########################################################################################
                 # Check for degenerate boxes in this batch item.
                 #########################################################################################
@@ -1118,6 +1130,7 @@ class DataGenerator:
             if batch_items_to_remove:
                 for j in sorted(batch_items_to_remove, reverse=True):
                     # This isn't efficient, but it hopefully shouldn't need to be done often anyway.
+                    
                     batch_X.pop(j)
                     batch_filenames.pop(j)
                     if batch_inverse_transforms: batch_inverse_transforms.pop(j)
@@ -1218,3 +1231,6 @@ class DataGenerator:
             The number of images in the dataset.
         '''
         return self.dataset_size
+
+    def get_filename_list(self):
+        return self.filenames

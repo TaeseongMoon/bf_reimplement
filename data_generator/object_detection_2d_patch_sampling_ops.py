@@ -221,7 +221,7 @@ class CropPad:
                  clip_boxes=True,
                  box_filter=None,
                  background=(0,0,0),
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             patch_ymin (int, optional): The vertical coordinate of the top left corner of the output
@@ -266,7 +266,7 @@ class CropPad:
     def __call__(self, image, labels=None, return_inverter=False):
 
         img_height, img_width = image.shape[:2]
-
+        
         if (self.patch_ymin > img_height) or (self.patch_xmin > img_width):
             raise ValueError("The given patch doesn't overlap with the input image.")
 
@@ -276,7 +276,16 @@ class CropPad:
         ymin = self.labels_format['ymin']
         xmax = self.labels_format['xmax']
         ymax = self.labels_format['ymax']
-
+        kp1_x = self.labels_format['kp1_x']
+        kp1_y = self.labels_format['kp1_y']
+        kp2_x = self.labels_format['kp2_x']
+        kp2_y = self.labels_format['kp2_y']
+        kp3_x = self.labels_format['kp3_x']
+        kp3_y = self.labels_format['kp3_y']
+        kp4_x = self.labels_format['kp4_x']
+        kp4_y = self.labels_format['kp4_y']
+        kp5_x = self.labels_format['kp5_x']
+        kp5_y = self.labels_format['kp5_y']
         # Top left corner of the patch relative to the image coordinate system:
         patch_ymin = self.patch_ymin
         patch_xmin = self.patch_xmin
@@ -315,15 +324,15 @@ class CropPad:
         if return_inverter:
             def inverter(labels):
                 labels = np.copy(labels)
-                labels[:, [ymin+1, ymax+1]] += patch_ymin
-                labels[:, [xmin+1, xmax+1]] += patch_xmin
+                labels[:, [ymin+1, ymax+1, kp1_y+1, kp2_y+1, kp3_y+1, kp4_y+1, kp5_y+1]] += patch_ymin
+                labels[:, [xmin+1, xmax+1, kp1_x+1, kp2_x+1, kp3_x+1, kp4_x+1, kp5_x+1]] += patch_xmin
                 return labels
 
         if not (labels is None):
 
             # Translate the box coordinates to the patch's coordinate system.
-            labels[:, [ymin, ymax]] -= patch_ymin
-            labels[:, [xmin, xmax]] -= patch_xmin
+            labels[:, [ymin, ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] -= patch_ymin
+            labels[:, [xmin, xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] -= patch_xmin
 
             # Compute all valid boxes for this patch.
             if not (self.box_filter is None):
@@ -333,8 +342,8 @@ class CropPad:
                                          image_width=self.patch_width)
 
             if self.clip_boxes:
-                labels[:,[ymin,ymax]] = np.clip(labels[:,[ymin,ymax]], a_min=0, a_max=self.patch_height-1)
-                labels[:,[xmin,xmax]] = np.clip(labels[:,[xmin,xmax]], a_min=0, a_max=self.patch_width-1)
+                labels[:,[ymin,ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] = np.clip(labels[:,[ymin,ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]], a_min=0, a_max=self.patch_height-1)
+                labels[:,[xmin,xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] = np.clip(labels[:,[xmin,xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]], a_min=0, a_max=self.patch_width-1)
 
             if return_inverter:
                 return image, labels, inverter
@@ -400,7 +409,7 @@ class Pad:
                  pad_left,
                  pad_right,
                  background=(0,0,0),
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         self.pad_top = pad_top
         self.pad_bottom = pad_bottom
         self.pad_left = pad_left
@@ -452,7 +461,7 @@ class RandomPatch:
                  prob=1.0,
                  background=(0,0,0),
                  can_fail=False,
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
         Arguments:
             patch_coord_generator (PatchCoordinateGenerator): A `PatchCoordinateGenerator` object
@@ -516,7 +525,16 @@ class RandomPatch:
             ymin = self.labels_format['ymin']
             xmax = self.labels_format['xmax']
             ymax = self.labels_format['ymax']
-
+            kp1_x = self.labels_format['kp1_x']
+            kp1_y = self.labels_format['kp1_y']
+            kp2_x = self.labels_format['kp2_x']
+            kp2_y = self.labels_format['kp2_y']
+            kp3_x = self.labels_format['kp3_x']
+            kp3_y = self.labels_format['kp3_y']
+            kp4_x = self.labels_format['kp4_x']
+            kp4_y = self.labels_format['kp4_y']
+            kp5_x = self.labels_format['kp5_x']
+            kp5_y = self.labels_format['kp5_y']
             # Override the preset labels format.
             if not self.image_validator is None:
                 self.image_validator.labels_format = self.labels_format
@@ -538,8 +556,8 @@ class RandomPatch:
                 else:
                     # Translate the box coordinates to the patch's coordinate system.
                     new_labels = np.copy(labels)
-                    new_labels[:, [ymin, ymax]] -= patch_ymin
-                    new_labels[:, [xmin, xmax]] -= patch_xmin
+                    new_labels[:, [ymin, ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] -= patch_ymin
+                    new_labels[:, [xmin, xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] -= patch_xmin
                     # Check if the patch is valid.
                     if self.image_validator(labels=new_labels,
                                             image_height=patch_height,

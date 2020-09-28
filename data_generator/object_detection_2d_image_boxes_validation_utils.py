@@ -88,7 +88,7 @@ class BoxFilter:
                  overlap_criterion='center_point',
                  overlap_bounds=(0.3, 1.0),
                  min_area=16,
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4},
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14},
                  border_pixels='half'):
         '''
         Arguments:
@@ -169,7 +169,16 @@ class BoxFilter:
         ymin = self.labels_format['ymin']
         xmax = self.labels_format['xmax']
         ymax = self.labels_format['ymax']
-
+        kp1_x = self.labels_format['kp1_x']
+        kp1_y = self.labels_format['kp1_y']
+        kp2_x = self.labels_format['kp2_x']
+        kp2_y = self.labels_format['kp2_y']
+        kp3_x = self.labels_format['kp3_x']
+        kp3_y = self.labels_format['kp3_y']
+        kp4_x = self.labels_format['kp4_x']
+        kp4_y = self.labels_format['kp4_y']
+        kp5_x = self.labels_format['kp5_x']
+        kp5_y = self.labels_format['kp5_y']
         # Record the boxes that pass all checks here.
         requirements_met = np.ones(shape=labels.shape[0], dtype=np.bool)
 
@@ -241,7 +250,7 @@ class ImageValidator:
                  overlap_criterion='center_point',
                  bounds=(0.3, 1.0),
                  n_boxes_min=1,
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4},
+                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14},
                  border_pixels='half'):
         '''
         Arguments:

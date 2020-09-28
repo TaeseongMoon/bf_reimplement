@@ -173,7 +173,9 @@ class AnchorBoxes(Layer):
             batch_size, feature_map_height, feature_map_width, feature_map_channels = x.shape
         else: # Not yet relevant since TensorFlow is the only supported backend right now, but it can't harm to have this in here for the future
             batch_size, feature_map_channels, feature_map_height, feature_map_width = x.shape
-
+        # feature_map_height = feature_map_height.value
+        # feature_map_width = feature_map_width.value
+        # feature_map_channels = feature_map_channels.value
         # Compute the grid of box center points. They are identical for all aspect ratios.
 
         # Compute the step sizes, i.e. how far apart the anchor box center points will be vertically and horizontally.
