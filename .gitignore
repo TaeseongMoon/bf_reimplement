@@ -100,9 +100,10 @@ local*
 # Ignore data folder
 /data/*
 !/data/.gitkeep
-
+/logs
 # h5 files
-/*.h5
+*.h5
+checkout/
 
 .vscode
 
