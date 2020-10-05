@@ -103,6 +103,7 @@ local*
 /logs
 # h5 files
 *.h5
+*.jpg
 checkout/
 
 .vscode
