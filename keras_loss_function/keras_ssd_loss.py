@@ -96,11 +96,6 @@ class SSDLoss:
         # Compute the log loss
         log_loss = -tf.reduce_sum(input_tensor=y_true * tf.math.log(y_pred), axis=-1)
         return log_loss
-    def test_metric(self, y_true, y_pred):
-        y_true = tf.keras.backend.print_tensor(y_true)
-        y_pred = tf.keras.backend.print_tensor(y_pred)
-        
-        return y_true, y_pred
 
     def compute_loss(self, y_true, y_pred):
         

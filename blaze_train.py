@@ -2,10 +2,10 @@ import tensorflow as tf
 import math
 import os
 from datetime import datetime
-from keras.optimizers import Adam, SGD
-from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TerminateOnNaN, CSVLogger, TensorBoard
-from keras import backend as K
-from keras.models import load_model
+from tensorflow.keras.optimizers import Adam, SGD
+from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler, TerminateOnNaN, CSVLogger, TensorBoard
+from tensorflow.keras import backend as K
+
 from math import ceil
 import numpy as np
 from models.keras_blazeface import blazeface
@@ -67,7 +67,7 @@ with tf.device('/gpu:0'):
     #    If you want to follow the original Caffe implementation, use the preset SGD
     #    optimizer, otherwise I'd recommend the commented-out Adam optimizer.
 
-    adam = Adam(0.001)
+    adam = Adam(learning_rate=0.001)
     #sgd = SGD(lr=0.001, momentum=0.9, decay=0.0, nesterov=False)
 
     ssd_loss = SSDLoss(neg_pos_ratio=3, alpha=1.0)
@@ -178,25 +178,26 @@ with tf.device('/gpu:0'):
     print("Number of images in the training dataset:\t{:>6}".format(train_dataset_size))
     # print("Number of images in the validation dataset:\t{:>6}".format(val_dataset_size))
 
-    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_with_landmark_simple_v3_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
+    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_with_landmark_test_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
                                     monitor='loss',
                                     verbose=1,
                                     save_best_only=True,
                                     save_weights_only=False,
                                     mode='auto',
-                                    period=1)
+                                    save_freq=1)
+
     #model_checkpoint.best = 
 
-    csv_logger = CSVLogger(filename='blazeface_landmark_wider_simple_v3_training_log.csv',
-                        separator=',',
-                        append=True)
+#     csv_logger = CSVLogger(filename='blazeface_landmark_wider_simple_v3_training_log.csv',
+#                         separator=',',
+#                         append=True)
 
     log_dir = './logs/scalars/'+ datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = TensorBoard(log_dir=log_dir)
     terminate_on_nan = TerminateOnNaN()
 
     callbacks = [model_checkpoint,
-                csv_logger,
+                # csv_logger,
                 tensorboard_callback,
                 terminate_on_nan]
 

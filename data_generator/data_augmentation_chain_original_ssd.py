@@ -59,7 +59,7 @@ class SSDRandomCrop:
         # and width of the respective image and the aspect ratio of the
         # patches is between 0.5 and 2.0.
         self.patch_coord_generator = PatchCoordinateGenerator(must_match='h_w',
-                                                              min_scale=0.3,
+                                                              min_scale=0.6,
                                                               max_scale=1.0,
                                                               scale_uniformly=False,
                                                               min_aspect_ratio = 0.5,
@@ -135,7 +135,7 @@ class SSDExpand:
                                   image_validator=None,
                                   n_trials_max=1,
                                   clip_boxes=False,
-                                  prob=0.5,
+                                  prob=0.6,
                                   background=background,
                                   labels_format=self.labels_format)
 
@@ -254,7 +254,7 @@ class SSDDataAugmentation:
                                          labels_format=self.labels_format)
 
         self.sequence = [self.photometric_distortions,
-                         self.expand,
+                        #  self.expand,
                          self.random_crop,
                          self.random_flip,
                          self.resize]
