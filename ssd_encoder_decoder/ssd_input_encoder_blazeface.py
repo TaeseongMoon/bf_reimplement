@@ -342,8 +342,8 @@ class SSDInputEncoder:
                 labels = convert_coordinates(labels, start_index=xmin, conversion='corners2minmax')
             
             classes_one_hot = class_vectors[labels[:, class_id].astype(np.int)] # The one-hot class IDs for the ground truth boxes of this batch item
-            labels_one_hot = np.concatenate([classes_one_hot, labels[:, [xmin, ymin, xmax, ymax]]], axis=-1) # The one-hot version of the labels for this batch item
-            landmark_one_hot = np.concatenate([labels_one_hot, labels[:, [kp1_x, kp1_y, kp2_x, kp2_y, kp3_x, kp3_y, kp4_x, kp4_y, kp5_x, kp5_y]]], axis=-1)
+            # labels_one_hot = np.concatenate([classes_one_hot, labels[:, [xmin, ymin, xmax, ymax]]], axis=-1) # The one-hot version of the labels for this batch item
+            landmark_one_hot = np.concatenate([classes_one_hot, labels[:, [kp1_x, kp1_y, kp2_x, kp2_y, kp3_x, kp3_y, kp4_x, kp4_y, kp5_x, kp5_y]]], axis=-1)
 
             # Compute the IoU similarities between all anchor boxes and all ground truth boxes for this batch item.
             # This is a matrix of shape `(num_ground_truth_boxes, num_anchor_boxes)`.
@@ -401,10 +401,10 @@ class SSDInputEncoder:
             y_encoded[:,:,[-12,-11]] /= y_encoded[:,:,[-6,-5]] * y_encoded[:,:,[-4,-3]]
             y_encoded[:,:,[-10,-9]] -= y_encoded[:,:,[-8,-7]]
             y_encoded[:,:,[-10,-9]] /= y_encoded[:,:,[-6,-5]] * y_encoded[:,:,[-4,-3]]
-            y_encoded[:,:,[-22,-21]] -= y_encoded[:,:,[-8,-7]] # cx(gt) - cx(anchor), cy(gt) - cy(anchor)
-            y_encoded[:,:,[-22,-21]] /= y_encoded[:,:,[-6,-5]] * y_encoded[:,:,[-4,-3]] # (cx(gt) - cx(anchor)) / w(anchor) / cx_variance, (cy(gt) - cy(anchor)) / h(anchor) / cy_variance
-            y_encoded[:,:,[-20,-19]] /= y_encoded[:,:,[-6,-5]] # w(gt) / w(anchor), h(gt) / h(anchor)
-            y_encoded[:,:,[-20,-19]] = np.log(y_encoded[:,:,[-20,-19]]) / y_encoded[:,:,[-2,-1]] # ln(w(gt) / w(anchor)) / w_variance, ln(h(gt) / h(anchor)) / h_variance (ln == natural logarithm)
+            # y_encoded[:,:,[-22,-21]] -= y_encoded[:,:,[-8,-7]] # cx(gt) - cx(anchor), cy(gt) - cy(anchor)
+            # y_encoded[:,:,[-22,-21]] /= y_encoded[:,:,[-6,-5]] * y_encoded[:,:,[-4,-3]] # (cx(gt) - cx(anchor)) / w(anchor) / cx_variance, (cy(gt) - cy(anchor)) / h(anchor) / cy_variance
+            # y_encoded[:,:,[-20,-19]] /= y_encoded[:,:,[-6,-5]] # w(gt) / w(anchor), h(gt) / h(anchor)
+            # y_encoded[:,:,[-20,-19]] = np.log(y_encoded[:,:,[-20,-19]]) / y_encoded[:,:,[-2,-1]] # ln(w(gt) / w(anchor)) / w_variance, ln(h(gt) / h(anchor)) / h_variance (ln == natural logarithm)
         elif self.coords == 'corners':
             y_encoded[:,:,-22:-18] -= y_encoded[:,:,-8:-4] # (gt - anchor) for all four coordinates
             y_encoded[:,:,[-22,-20]] /= np.expand_dims(y_encoded[:,:,-6] - y_encoded[:,:,-8], axis=-1) # (xmin(gt) - xmin(anchor)) / w(anchor), (xmax(gt) - xmax(anchor)) / w(anchor)
@@ -612,7 +612,7 @@ class SSDInputEncoder:
         #    another tensor of the shape of `boxes_tensor` as a space filler so that `y_encoding_template` has the same
         #    shape as the SSD model output tensor. The content of this tensor is irrelevant, we'll just use
         #    `boxes_tensor` a second time.
-        y_encoding_template = np.concatenate((classes_tensor, boxes_tensor, landmark_tensor, boxes_tensor, variances_tensor), axis=2)
+        y_encoding_template = np.concatenate((classes_tensor, landmark_tensor, boxes_tensor, variances_tensor), axis=2)
 
         if diagnostics:
             return y_encoding_template, self.centers_diag, self.wh_list_diag, self.steps_diag, self.offsets_diag
