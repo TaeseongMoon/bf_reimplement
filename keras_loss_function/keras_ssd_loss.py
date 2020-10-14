@@ -96,14 +96,10 @@ class SSDLoss:
         # Compute the log loss
         log_loss = -tf.reduce_sum(input_tensor=y_true * tf.math.log(y_pred), axis=-1)
         return log_loss
-    def test_metric(self, y_true, y_pred):
-        y_true = tf.keras.backend.print_tensor(y_true)
-        y_pred = tf.keras.backend.print_tensor(y_pred)
-        
-        return y_true, y_pred
+
 
     def compute_loss(self, y_true, y_pred):
-        
+
         '''
         Compute the loss of the SSD model prediction against the ground truth.
 
@@ -139,15 +135,15 @@ class SSDLoss:
 
         # 1: Compute the losses for class and box predictions for every box.
 
-        classification_loss = tf.cast(self.log_loss(y_true[:,:,:-22], y_pred[:,:,:-22]), tf.float32) # Output shape: (batch_size, n_boxes)
-        localization_loss = tf.cast(self.smooth_L1_loss(y_true[:,:,-22:-18], y_pred[:,:,-22:-18]), tf.float32) # Output shape: (batch_size, n_boxes)
+        classification_loss = tf.cast(self.log_loss(y_true[:,:,:-18], y_pred[:,:,:-18]), tf.float32) # Output shape: (batch_size, n_boxes)
+        # localization_loss = tf.cast(self.smooth_L1_loss(y_true[:,:,-22:-18], y_pred[:,:,-22:-18]), tf.float32) # Output shape: (batch_size, n_boxes)
         landmark_loss = tf.cast(self.smooth_L1_loss(y_true[:,:,-18:-8], y_pred[:,:,-18:-8]), tf.float32)
 
         # 2: Compute the classification losses for the positive and negative targets.
 
         # Create masks for the positive and negative ground truth classes.
         negatives = y_true[:,:,0] # Tensor of shape (batch_size, n_boxes)
-        positives = tf.cast(tf.reduce_max(input_tensor=y_true[:,:,1:-22], axis=-1), tf.float32) # Tensor of shape (batch_size, n_boxes)
+        positives = tf.cast(tf.reduce_max(input_tensor=y_true[:,:,1:-18], axis=-1), tf.float32) # Tensor of shape (batch_size, n_boxes)
 
         # Count the number of positive boxes (classes 1 to n) in y_true across the whole batch.
         n_positive = tf.reduce_sum(input_tensor=positives)
@@ -207,11 +203,11 @@ class SSDLoss:
         # 3: Compute the localization loss for the positive targets.
         #    We don't compute a localization loss for negative predicted boxes (obviously: there are no ground truth boxes they would correspond to).
 
-        loc_loss = tf.reduce_sum(input_tensor=localization_loss * positives, axis=-1) # Tensor of shape (batch_size,)
+        # loc_loss = tf.reduce_sum(input_tensor=localization_loss * positives, axis=-1) # Tensor of shape (batch_size,)
         land_loss = tf.reduce_sum(input_tensor=landmark_loss * positives, axis=-1)
         # 4: Compute the total loss.
 
-        total_loss = (class_loss + self.alpha * loc_loss + land_loss) / tf.maximum(1.0, n_positive) # In case `n_positive == 0`
+        total_loss = (class_loss + land_loss) / tf.maximum(1.0, n_positive) # In case `n_positive == 0`
         # Keras has the annoying habit of dividing the loss by the batch size, which sucks in our case
         # because the relevant criterion to average our loss over is the number of positive boxes in the batch
         # (by which we're dividing in the line above), not the batch size. So in order to revert Keras' averaging

@@ -74,11 +74,12 @@ with tf.device('/gpu:0'):
 
     model.compile(optimizer=adam, loss=ssd_loss.compute_loss)
     model.summary()
-    
+
     train_images_dir = "../BlazeFace/data/WIDER_train/images/"
-    val_images_dir = '../BlazeFace/data/WIDER_val/images/'
-    train_anno_file = "./data/train_annos_simple.csv"
-    # val_anno_file = "./data/val_annos.csv"
+    val_images_dir = '../BlazeFace/data/WIDER_train/images/'
+    train_anno_file = "./data/train_annos_split.csv"
+    val_anno_file = "./data/valid_annos_split.csv"
+    
 
     # 1: Instantiate two `DataGenerator` objects: One for training, one for validation.
 
@@ -87,22 +88,22 @@ with tf.device('/gpu:0'):
     #train_dataset = DataGenerator(load_images_into_memory=True, hdf5_dataset_path='wider_train_new.h5')
     #val_dataset = DataGenerator(load_images_into_memory=True, hdf5_dataset_path='wider_val_new_v2.h5')
     train_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None)
-    # val_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None)
+    val_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None)
     # 2: Parse the image and label lists for the training and validation datasets.
 
     # Ground truth
     train_labels_filename = train_anno_file
-    # val_labels_filename   = val_anno_file
+    val_labels_filename   = val_anno_file
 
     train_dataset.parse_csv(images_dir=train_images_dir,
                             labels_filename=train_labels_filename,
                             input_format=['image_name', 'xmin', 'xmax', 'ymin', 'ymax','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y','class_id'], # This is the order of the first six columns in the CSV file that contains the labels for your dataset. If your labels are in XML format, maybe the XML parser will be helpful, check the documentation.
                             include_classes='all')
 
-    # val_dataset.parse_csv(images_dir=val_images_dir,
-    #                     labels_filename=val_labels_filename,
-    #                         input_format=['image_name', 'xmin', 'xmax', 'ymin', 'ymax', 'class_id'],
-    #                         include_classes='all')
+    val_dataset.parse_csv(images_dir=val_images_dir,
+                        labels_filename=val_labels_filename,
+                            input_format=['image_name', 'xmin', 'xmax', 'ymin', 'ymax','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y', 'class_id'],
+                            include_classes='all')
 
     # Optional: Convert the dataset into an HDF5 dataset. This will require more disk space, but will
     # speed up the training. Doing this is not relevant in case you activated the `load_images_into_memory`
@@ -163,23 +164,23 @@ with tf.device('/gpu:0'):
                                                     'encoded_labels'},
                                             keep_images_without_gt=False)
 
-    # val_generator = val_dataset.generate(batch_size=batch_size,
-    #                                     shuffle=False,
-    #                                     transformations=[convert_to_3_channels,
-    #                                                     resize],
-    #                                     label_encoder=ssd_input_encoder,
-    #                                     returns={'processed_images',
-    #                                             'encoded_labels'},
-    #                                     keep_images_without_gt=False)
+    val_generator = val_dataset.generate(batch_size=batch_size,
+                                        shuffle=False,
+                                        transformations=[convert_to_3_channels,
+                                                        resize],
+                                        label_encoder=ssd_input_encoder,
+                                        returns={'processed_images',
+                                                'encoded_labels'},
+                                        keep_images_without_gt=False)
 
     # Get the number of samples in the training and validations datasets.
     train_dataset_size = train_dataset.get_dataset_size()
-    # val_dataset_size   = val_dataset.get_dataset_size()
+    val_dataset_size   = val_dataset.get_dataset_size()
     print("Number of images in the training dataset:\t{:>6}".format(train_dataset_size))
     # print("Number of images in the validation dataset:\t{:>6}".format(val_dataset_size))
 
-    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_with_landmark_simple_v3_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
-                                    monitor='loss',
+    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_with_landmark_simple_only_landmark_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
+                                    monitor='val_loss',
                                     verbose=1,
                                     save_best_only=True,
                                     save_weights_only=False,
@@ -187,26 +188,28 @@ with tf.device('/gpu:0'):
                                     period=1)
     #model_checkpoint.best = 
 
-    csv_logger = CSVLogger(filename='blazeface_landmark_wider_simple_v3_training_log.csv',
-                        separator=',',
-                        append=True)
+#     csv_logger = CSVLogger(filename='blazeface_landmark_wider_simple_v3_training_log.csv',
+#                         separator=',',
+#                         append=True)
 
     log_dir = './logs/scalars/'+ datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = TensorBoard(log_dir=log_dir)
     terminate_on_nan = TerminateOnNaN()
 
     callbacks = [model_checkpoint,
-                csv_logger,
+                # csv_logger,
                 tensorboard_callback,
                 terminate_on_nan]
 
     initial_epoch   = 0
-    final_epoch     = 250
+    final_epoch     = 160
     steps_per_epoch = train_dataset_size // batch_size
 
     history = model.fit(train_generator,
                         steps_per_epoch=steps_per_epoch,
                         epochs=final_epoch,
                         callbacks=callbacks,
+                        validation_data=val_generator,
+                        validation_steps=ceil(val_dataset_size/batch_size),
                         initial_epoch=initial_epoch
                         )

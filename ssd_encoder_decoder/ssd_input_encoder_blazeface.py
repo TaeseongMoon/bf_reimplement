@@ -216,7 +216,7 @@ class SSDInputEncoder:
         self.coords = coords
         self.normalize_coords = normalize_coords
         self.background_id = background_id
-
+ 
         # Compute the number of boxes per spatial location for each predictor layer.
         # For example, if a predictor layer has three different aspect ratios, [1.0, 0.5, 2.0], and is
         # supposed to predict two boxes of slightly different size for aspect ratio 1.0, then that predictor
@@ -348,7 +348,7 @@ class SSDInputEncoder:
             # Compute the IoU similarities between all anchor boxes and all ground truth boxes for this batch item.
             # This is a matrix of shape `(num_ground_truth_boxes, num_anchor_boxes)`.
             
-            similarities = iou(labels[:,[xmin,ymin,xmax,ymax]], y_encoded[i,:,-22:-18], coords=self.coords, mode='outer_product', border_pixels=self.border_pixels)
+            similarities = iou(labels[:,[xmin,ymin,xmax,ymax]], y_encoded[i,:,-8:-4], coords=self.coords, mode='outer_product', border_pixels=self.border_pixels)
             
             # First: Do bipartite matching, i.e. match each ground truth box to the one anchor box with the highest IoU.
             #        This ensures that each ground truth box will have at least one good match.
@@ -415,11 +415,11 @@ class SSDInputEncoder:
             y_encoded[:,:,[-22,-21]] /= np.expand_dims(y_encoded[:,:,-7] - y_encoded[:,:,-8], axis=-1) # (xmin(gt) - xmin(anchor)) / w(anchor), (xmax(gt) - xmax(anchor)) / w(anchor)
             y_encoded[:,:,[-20,-19]] /= np.expand_dims(y_encoded[:,:,-5] - y_encoded[:,:,-6], axis=-1) # (ymin(gt) - ymin(anchor)) / h(anchor), (ymax(gt) - ymax(anchor)) / h(anchor)
             y_encoded[:,:,-22:-18] /= y_encoded[:,:,-4:] # (gt - anchor) / size(anchor) / variance for all four coordinates, where 'size' refers to w and h respectively
-
+        
         if diagnostics:
             # Here we'll save the matched anchor boxes (i.e. anchor boxes that were matched to a ground truth box, but keeping the anchor box coordinates).
             y_matched_anchors = np.copy(y_encoded)
-            y_matched_anchors[:,:,-22:-18] = 0 # Keeping the anchor box coordinates means setting the offsets to zero.
+            y_matched_anchors[:,:,-18:-14] = 0 # Keeping the anchor box coordinates means setting the offsets to zero.
             return y_encoded, y_matched_anchors
         else:
             return y_encoded
