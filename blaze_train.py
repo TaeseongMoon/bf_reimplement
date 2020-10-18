@@ -75,9 +75,9 @@ with tf.device('/gpu:0'):
     model.compile(optimizer=adam, loss=ssd_loss.compute_loss)
     model.summary()
     
-    train_images_dir = "../BlazeFace/data/WIDER_train/images/"
-    val_images_dir = '../BlazeFace/data/WIDER_val/images/'
-    train_anno_file = "./data/train_annos_simple.csv"
+    train_images_dir = "./data/cropped_widerface/images/"
+#     val_images_dir = '../BlazeFace/data/WIDER_val/images/'
+    train_anno_file = "./data/train_annos_cropped.csv"
     # val_anno_file = "./data/val_annos.csv"
 
     # 1: Instantiate two `DataGenerator` objects: One for training, one for validation.
@@ -178,7 +178,7 @@ with tf.device('/gpu:0'):
     print("Number of images in the training dataset:\t{:>6}".format(train_dataset_size))
     # print("Number of images in the validation dataset:\t{:>6}".format(val_dataset_size))
 
-    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_with_landmark_simple_v3_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
+    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_with_landmark_crop_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
                                     monitor='loss',
                                     verbose=1,
                                     save_best_only=True,
@@ -187,21 +187,21 @@ with tf.device('/gpu:0'):
                                     period=1)
     #model_checkpoint.best = 
 
-    csv_logger = CSVLogger(filename='blazeface_landmark_wider_simple_v3_training_log.csv',
-                        separator=',',
-                        append=True)
+#     csv_logger = CSVLogger(filename='blazeface_landmark_wider_crop_training_log.csv',
+#                         separator=',',
+#                         append=True)
 
-    log_dir = './logs/scalars/'+ datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = './logs/scalars/'+ 'crop_data-'+datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = TensorBoard(log_dir=log_dir)
     terminate_on_nan = TerminateOnNaN()
 
     callbacks = [model_checkpoint,
-                csv_logger,
+                # csv_logger,
                 tensorboard_callback,
                 terminate_on_nan]
 
     initial_epoch   = 0
-    final_epoch     = 250
+    final_epoch     = 150
     steps_per_epoch = train_dataset_size // batch_size
 
     history = model.fit(train_generator,

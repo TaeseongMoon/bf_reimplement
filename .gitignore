@@ -101,6 +101,9 @@ local*
 /data/*
 !/data/.gitkeep
 /logs
+/test
+test/
+examples/
 # h5 files
 *.h5
 *.jpg
