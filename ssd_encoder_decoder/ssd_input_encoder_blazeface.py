@@ -247,6 +247,7 @@ class SSDInputEncoder:
         self.centers_diag = [] # Anchor box center points as `(cy, cx)` for each predictor layer
 
         # Iterate over all predictor layers and compute the anchor boxes for each one.
+
         for i in range(len(self.predictor_sizes)):
             boxes, center, wh, step, offset = self.generate_anchor_boxes_for_layer(feature_map_size=self.predictor_sizes[i],
                                                                                    aspect_ratios=self.aspect_ratios[i],
@@ -340,51 +341,54 @@ class SSDInputEncoder:
                 labels = convert_coordinates(labels, start_index=xmin, conversion='corners2centroids', border_pixels=self.border_pixels)
             elif self.coords == 'minmax':
                 labels = convert_coordinates(labels, start_index=xmin, conversion='corners2minmax')
-            
+ 
             classes_one_hot = class_vectors[labels[:, class_id].astype(np.int)] # The one-hot class IDs for the ground truth boxes of this batch item
             # labels_one_hot = np.concatenate([classes_one_hot, labels[:, [xmin, ymin, xmax, ymax]]], axis=-1) # The one-hot version of the labels for this batch item
             landmark_one_hot = np.concatenate([classes_one_hot, labels[:, [kp1_x, kp1_y, kp2_x, kp2_y, kp3_x, kp3_y, kp4_x, kp4_y, kp5_x, kp5_y]]], axis=-1)
-
+            
             # Compute the IoU similarities between all anchor boxes and all ground truth boxes for this batch item.
             # This is a matrix of shape `(num_ground_truth_boxes, num_anchor_boxes)`.
             
-            similarities = iou(labels[:,[xmin,ymin,xmax,ymax]], y_encoded[i,:,-8:-4], coords=self.coords, mode='outer_product', border_pixels=self.border_pixels)
+            # similarities = iou(labels[:,[xmin,ymin,xmax,ymax]], y_encoded[i,:,-8:-4], coords=self.coords, mode='outer_product', border_pixels=self.border_pixels)
             
             # First: Do bipartite matching, i.e. match each ground truth box to the one anchor box with the highest IoU.
             #        This ensures that each ground truth box will have at least one good match.
 
             # For each ground truth box, get the anchor box to match with it.
-            bipartite_matches = match_bipartite_greedy(weight_matrix=similarities)
+            # bipartite_matches = match_bipartite_greedy(weight_matrix=similarities)
 
             # Write the ground truth data to the matched anchor boxes.
             # y_encoded[i, bipartite_matches, :-8] = labels_one_hot
-            y_encoded[i, bipartite_matches, : -8] = landmark_one_hot
+            
+            for z in range(y_encoded.shape[1]):
+                y_encoded[i, z, :-8] = landmark_one_hot
+            # y_encoded[i, 135, :-8] = landmark_one_hot
             # Set the columns of the matched anchor boxes to zero to indicate that they were matched.
-            similarities[:, bipartite_matches] = 0
+            # similarities[:, bipartite_matches] = 0
 
             # Second: Maybe do 'multi' matching, where each remaining anchor box will be matched to its most similar
             #         ground truth box with an IoU of at least `pos_iou_threshold`, or not matched if there is no
             #         such ground truth box.
 
-            if self.matching_type == 'multi':
+            # if self.matching_type == 'multi':
 
-                # Get all matches that satisfy the IoU threshold.
-                matches = match_multi(weight_matrix=similarities, threshold=self.pos_iou_threshold)
+            #     # Get all matches that satisfy the IoU threshold.
+            #     matches = match_multi(weight_matrix=similarities, threshold=self.pos_iou_threshold)
 
-                # Write the ground truth data to the matched anchor boxes.
-                #y_encoded[i, matches[1], :-8] = labels_one_hot[matches[0]]
-                y_encoded[i, matches[1], :-8] = landmark_one_hot[matches[0]]
-                # Set the columns of the matched anchor boxes to zero to indicate that they were matched.
-                similarities[:, matches[1]] = 0
+            #     # Write the ground truth data to the matched anchor boxes.
+            #     #y_encoded[i, matches[1], :-8] = labels_one_hot[matches[0]]
+            #     y_encoded[i, matches[1], :-8] = landmark_one_hot[matches[0]]
+            #     # Set the columns of the matched anchor boxes to zero to indicate that they were matched.
+            #     similarities[:, matches[1]] = 0
 
-            # Third: Now after the matching is done, all negative (background) anchor boxes that have
-            #        an IoU of `neg_iou_limit` or more with any ground truth box will be set to netral,
-            #        i.e. they will no longer be background boxes. These anchors are "too close" to a
-            #        ground truth box to be valid background boxes.
+            # # Third: Now after the matching is done, all negative (background) anchor boxes that have
+            # #        an IoU of `neg_iou_limit` or more with any ground truth box will be set to netral,
+            # #        i.e. they will no longer be background boxes. These anchors are "too close" to a
+            # #        ground truth box to be valid background boxes.
 
-            max_background_similarities = np.amax(similarities, axis=0)
-            neutral_boxes = np.nonzero(max_background_similarities >= self.neg_iou_limit)[0]
-            y_encoded[i, neutral_boxes, self.background_id] = 0
+            # max_background_similarities = np.amax(similarities, axis=0)
+            # neutral_boxes = np.nonzero(max_background_similarities >= self.neg_iou_limit)[0]
+            # y_encoded[i, neutral_boxes, self.background_id] = 0
 
         ###################################################s##########`#####################
         # Convert box coordinates to anchor box offsets.
@@ -415,7 +419,7 @@ class SSDInputEncoder:
             y_encoded[:,:,[-22,-21]] /= np.expand_dims(y_encoded[:,:,-7] - y_encoded[:,:,-8], axis=-1) # (xmin(gt) - xmin(anchor)) / w(anchor), (xmax(gt) - xmax(anchor)) / w(anchor)
             y_encoded[:,:,[-20,-19]] /= np.expand_dims(y_encoded[:,:,-5] - y_encoded[:,:,-6], axis=-1) # (ymin(gt) - ymin(anchor)) / h(anchor), (ymax(gt) - ymax(anchor)) / h(anchor)
             y_encoded[:,:,-22:-18] /= y_encoded[:,:,-4:] # (gt - anchor) / size(anchor) / variance for all four coordinates, where 'size' refers to w and h respectively
-        
+
         if diagnostics:
             # Here we'll save the matched anchor boxes (i.e. anchor boxes that were matched to a ground truth box, but keeping the anchor box coordinates).
             y_matched_anchors = np.copy(y_encoded)
@@ -464,15 +468,16 @@ class SSDInputEncoder:
         # The shorter side of the image will be used to compute `w` and `h` using `scale` and `aspect_ratios`.
         size = min(self.img_height, self.img_width)
 
+        wh_list = []
         for scale in scales:
             # Compute the box widths and and heights for all aspect ratios
-            wh_list = []
+            
             for ar in aspect_ratios:
                 box_width = scale * size * np.sqrt(ar)
                 box_height = scale * size / np.sqrt(ar)
                 wh_list.append((box_width, box_height))
-            wh_list = np.array(wh_list)
-            n_boxes = len(wh_list)
+        wh_list = np.array(wh_list)
+        n_boxes = len(wh_list)
 
         # Compute the grid of box center points. They are identical for all aspect ratios.
 

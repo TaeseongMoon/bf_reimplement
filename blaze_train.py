@@ -30,9 +30,9 @@ img_channels = 3 # Number of color channels of the model input images
 mean_color = [121, 111, 105] # The per-channel mean of the images in the dataset. Do not change this value if you're using any of the pre-trained weights.
 swap_channels = [2, 1, 0] # The color channel order in the original SSD is BGR, so we'll have the model reverse the color channel order of the input images.
 n_classes = 1 # Number of positive classes, e.g. 20 for Pascal VOC, 80 for MS COCO
-scales = [[0.2, math.sqrt(0.2 * 0.43)], [0.43, math.sqrt(0.43 * 0.67), 0.67, math.sqrt(0.67 * 0.9), 0.9, math.sqrt(0.9 * 1)]]
-aspect_ratios = [[1.0, 1.0], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]] # The anchor box aspect ratios
-steps = [64, 128] # The space between two adjacent anchor box center points for each predictor layer.
+scales = [[0.2]]
+aspect_ratios = [[1.0]] # The anchor box aspect ratios
+steps = [64] # The space between two adjacent anchor box center points for each predictor layer.
 offsets = None # The offsets of the first anchor box center points from the top and left borders of the image as a fraction of the step size for each predictor layer.
 clip_boxes = False # Whether or not to clip the anchor boxes to lie entirely within the image boundaries
 variances = [0.1, 0.1, 0.2, 0.2] # The variances by which the encoded target coordinates are divided as in the original implementation
@@ -75,10 +75,10 @@ with tf.device('/gpu:0'):
     model.compile(optimizer=adam, loss=ssd_loss.compute_loss)
     model.summary()
 
-    train_images_dir = "../BlazeFace/data/WIDER_train/images/"
-    val_images_dir = '../BlazeFace/data/WIDER_train/images/'
-    train_anno_file = "./data/train_annos_split.csv"
-    val_anno_file = "./data/valid_annos_split.csv"
+    train_images_dir = "./data/cropped_widerface/images/"
+    # val_images_dir = '../BlazeFace/data/WIDER_train/images/'
+    train_anno_file = "./data/train_annos_cropped.csv"
+    # val_anno_file = "./data/valid_annos_split.csv"
     
 
     # 1: Instantiate two `DataGenerator` objects: One for training, one for validation.
@@ -88,22 +88,22 @@ with tf.device('/gpu:0'):
     #train_dataset = DataGenerator(load_images_into_memory=True, hdf5_dataset_path='wider_train_new.h5')
     #val_dataset = DataGenerator(load_images_into_memory=True, hdf5_dataset_path='wider_val_new_v2.h5')
     train_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None)
-    val_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None)
+    # val_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None)
     # 2: Parse the image and label lists for the training and validation datasets.
 
     # Ground truth
     train_labels_filename = train_anno_file
-    val_labels_filename   = val_anno_file
+    # val_labels_filename   = val_anno_file
 
     train_dataset.parse_csv(images_dir=train_images_dir,
                             labels_filename=train_labels_filename,
                             input_format=['image_name', 'xmin', 'xmax', 'ymin', 'ymax','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y','class_id'], # This is the order of the first six columns in the CSV file that contains the labels for your dataset. If your labels are in XML format, maybe the XML parser will be helpful, check the documentation.
                             include_classes='all')
 
-    val_dataset.parse_csv(images_dir=val_images_dir,
-                        labels_filename=val_labels_filename,
-                            input_format=['image_name', 'xmin', 'xmax', 'ymin', 'ymax','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y', 'class_id'],
-                            include_classes='all')
+    # val_dataset.parse_csv(images_dir=val_images_dir,
+    #                     labels_filename=val_labels_filename,
+    #                         input_format=['image_name', 'xmin', 'xmax', 'ymin', 'ymax','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y', 'class_id'],
+    #                         include_classes='all')
 
     # Optional: Convert the dataset into an HDF5 dataset. This will require more disk space, but will
     # speed up the training. Doing this is not relevant in case you activated the `load_images_into_memory`
@@ -136,8 +136,7 @@ with tf.device('/gpu:0'):
     # 5: Instantiate an encoder that can encode ground truth labels into the format needed by the SSD loss function.
 
     # The encoder constructor needs the spatial dimensions of the model's predictor layers to create the anchor boxes.
-    predictor_sizes = [model.get_layer('classes16x16').output_shape[1:3],
-                    model.get_layer('classes8x8').output_shape[1:3]]
+    predictor_sizes = [model.get_layer('classes16x16').output_shape[1:3]]
     
     ssd_input_encoder = SSDInputEncoder(img_height=img_height,
                                         img_width=img_width,
@@ -164,23 +163,23 @@ with tf.device('/gpu:0'):
                                                     'encoded_labels'},
                                             keep_images_without_gt=False)
 
-    val_generator = val_dataset.generate(batch_size=batch_size,
-                                        shuffle=False,
-                                        transformations=[convert_to_3_channels,
-                                                        resize],
-                                        label_encoder=ssd_input_encoder,
-                                        returns={'processed_images',
-                                                'encoded_labels'},
-                                        keep_images_without_gt=False)
+    # val_generator = val_dataset.generate(batch_size=batch_size,
+    #                                     shuffle=False,
+    #                                     transformations=[convert_to_3_channels,
+    #                                                     resize],
+    #                                     label_encoder=ssd_input_encoder,
+    #                                     returns={'processed_images',
+    #                                             'encoded_labels'},
+    #                                     keep_images_without_gt=False)
 
     # Get the number of samples in the training and validations datasets.
     train_dataset_size = train_dataset.get_dataset_size()
-    val_dataset_size   = val_dataset.get_dataset_size()
+    # val_dataset_size   = val_dataset.get_dataset_size()
     print("Number of images in the training dataset:\t{:>6}".format(train_dataset_size))
     # print("Number of images in the validation dataset:\t{:>6}".format(val_dataset_size))
 
-    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_with_landmark_simple_only_landmark_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
-                                    monitor='val_loss',
+    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_with_landmark_simple_without_box_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
+                                    monitor='loss',
                                     verbose=1,
                                     save_best_only=True,
                                     save_weights_only=False,
@@ -192,7 +191,7 @@ with tf.device('/gpu:0'):
 #                         separator=',',
 #                         append=True)
 
-    log_dir = './logs/scalars/'+ datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = './logs/scalars/'+ 'without_box_'+datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = TensorBoard(log_dir=log_dir)
     terminate_on_nan = TerminateOnNaN()
 
@@ -209,7 +208,5 @@ with tf.device('/gpu:0'):
                         steps_per_epoch=steps_per_epoch,
                         epochs=final_epoch,
                         callbacks=callbacks,
-                        validation_data=val_generator,
-                        validation_steps=ceil(val_dataset_size/batch_size),
                         initial_epoch=initial_epoch
                         )

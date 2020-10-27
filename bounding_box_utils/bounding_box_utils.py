@@ -280,6 +280,7 @@ def intersection_area_(boxes1, boxes2, coords='corners', mode='outer_product', b
         return side_lengths[:,0] * side_lengths[:,1]
 
 
+
 def iou(boxes1, boxes2, coords='centroids', mode='outer_product', border_pixels='half'):
     '''
     Computes the intersection-over-union similarity (also known as Jaccard similarity)
