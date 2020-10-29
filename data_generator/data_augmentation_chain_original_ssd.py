@@ -255,8 +255,8 @@ class SSDDataAugmentation:
 
         self.sequence = [self.photometric_distortions,
                          #self.expand,
-                         self.random_crop,
-                         self.random_flip,
+                        #  self.random_crop,
+                        #  self.random_flip,
                          self.resize]
 
     def __call__(self, image, labels, return_inverter=False):

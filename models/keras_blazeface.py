@@ -280,7 +280,7 @@ def blazeface(image_size,
     # boxes16x16 = Conv2D(n_boxes[0] * 4, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='boxes16x16')(blaze_face[0])
     # boxes8x8 = Conv2D(n_boxes[1] * 4, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='boxes8x8')(blaze_face[1])
 
-    landmarks16x16 = Conv2D(n_boxes[0] * 10, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='landmarks16x16')(blaze_face)
+    landmarks16x16 = Conv2D(n_boxes[0] * 52, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='landmarks16x16')(blaze_face)
     # landmarks8x8 = Conv2D(n_boxes[1] * 10, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='landmarks8x8')(blaze_face[1])
     
     # Generate the anchor boxes
@@ -301,7 +301,7 @@ def blazeface(image_size,
     # boxes16x16_reshaped = Reshape((-1, 4), name='boxes16x16_reshape')(boxes16x16)
     # boxes8x8_reshaped = Reshape((-1, 4), name='boxes8x8_reshape')(boxes8x8)
 
-    landmarks16x16_reshaped = Reshape((-1, 10),name='landmarks16x16_reshape')(landmarks16x16)
+    landmarks16x16_reshaped = Reshape((-1, 52),name='landmarks16x16_reshape')(landmarks16x16)
     # landmarks8x8_reshaped = Reshape((-1, 10),name='landmarks8x8_reshape')(landmarks8x8)
 
     # Reshape the anchor box tensors, yielding 3D tensors of shape `(batch, height * width * n_boxes, 8)`

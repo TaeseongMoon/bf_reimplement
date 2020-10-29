@@ -97,6 +97,17 @@ class SSDLoss:
         log_loss = -tf.reduce_sum(input_tensor=y_true * tf.math.log(y_pred), axis=-1)
         return log_loss
 
+    def make_mask(self, y_encoded):
+        y_encoded_copied = tf.identity(y_encoded)
+        repeat = tf.constant([1, 1, 26])
+        y_encoded_masker = tf.multiply(y_encoded_copied[:,:,1:53], tf.multiply(tf.tile(y_encoded_copied[:,:,-6:-4], repeat), tf.tile(y_encoded_copied[:,:,-4:-2], repeat)))
+        y_encoded_masker = tf.add(y_encoded_masker, tf.tile(y_encoded_copied[:,:,-8:-6], repeat))
+        y_encoded_masker = tf.pad(y_encoded_masker, tf.constant([[0, 0], [0, 0], [1, 0]]), 'CONSTANT', constant_values=1)
+        mask_landm = tf.equal(y_encoded_masker, 0) 
+        mask_landm = tf.logical_not(mask_landm)
+
+        return mask_landm
+
 
     def compute_loss(self, y_true, y_pred):
 
@@ -132,18 +143,19 @@ class SSDLoss:
 
         batch_size = tf.shape(input=y_pred)[0] # Output dtype: tf.int32
         n_boxes = tf.shape(input=y_pred)[1] # Output dtype: tf.int32, note that `n_boxes` in this context denotes the total number of boxes per image, not the number of boxes per cell.
-
+        
         # 1: Compute the losses for class and box predictions for every box.
-
-        classification_loss = tf.cast(self.log_loss(y_true[:,:,:-18], y_pred[:,:,:-18]), tf.float32) # Output shape: (batch_size, n_boxes)
+        landmark_mask = self.make_mask(y_true)
+        classification_loss = tf.cast(self.log_loss(y_true[:,:,:-60], y_pred[:,:,:-60]), tf.float32) # Output shape: (batch_size, n_boxes)
         # localization_loss = tf.cast(self.smooth_L1_loss(y_true[:,:,-22:-18], y_pred[:,:,-22:-18]), tf.float32) # Output shape: (batch_size, n_boxes)
-        landmark_loss = tf.cast(self.smooth_L1_loss(y_true[:,:,-18:-8], y_pred[:,:,-18:-8]), tf.float32)
-
+        landmark_loss = tf.cast(self.smooth_L1_loss(tf.boolean_mask(y_true[:,:,-60:-8], landmark_mask),
+                                                    tf.boolean_mask(y_pred[:,:,-60:-8], landmark_mask)), tf.float32)
+        # landmark_loss = tf.cast(self.smooth_L1_loss(y_true[:,:,-60:-8],y_pred[:,:,-60:-8]), tf.float32)
         # 2: Compute the classification losses for the positive and negative targets.
 
         # Create masks for the positive and negative ground truth classes.
         negatives = y_true[:,:,0] # Tensor of shape (batch_size, n_boxes)
-        positives = tf.cast(tf.reduce_max(input_tensor=y_true[:,:,1:-18], axis=-1), tf.float32) # Tensor of shape (batch_size, n_boxes)
+        positives = tf.cast(tf.reduce_max(input_tensor=y_true[:,:,1:-60], axis=-1), tf.float32) # Tensor of shape (batch_size, n_boxes)
 
         # Count the number of positive boxes (classes 1 to n) in y_true across the whole batch.
         n_positive = tf.reduce_sum(input_tensor=positives)

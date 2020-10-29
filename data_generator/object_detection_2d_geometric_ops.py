@@ -34,7 +34,11 @@ class Resize:
                  width,
                  interpolation_mode=cv2.INTER_LINEAR,
                  box_filter=None,
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
+                 labels_format={'class_id': 0, 'kp1_x':1, 'kp1_y':2, 'kp2_x':3, 'kp2_y':4, 'kp3_x':5, 'kp3_y':6, 'kp4_x':7, 'kp4_y':8, 'kp5_x':9, 'kp5_y':10,
+                 'kp6_x':11, 'kp6_y':12, 'kp7_x':13, 'kp7_y':14, 'kp8_x':15, 'kp8_y':16, 'kp9_x':17, 'kp9_y':18, 'kp10_x':19, 'kp10_y':20,
+                 'kp11_x':21, 'kp11_y':22, 'kp12_x':23, 'kp12_y':24, 'kp13_x':25, 'kp13_y':26, 'kp14_x':27, 'kp14_y':28, 'kp15_x':29, 'kp15_y':30,
+                 'kp16_x':31, 'kp16_y':32, 'kp17_x':33, 'kp17_y':34, 'kp18_x':35, 'kp18_y':36, 'kp19_x':37, 'kp19_y':38, 'kp20_x':39, 'kp20_y':40,
+                 'kp21_x':41, 'kp21_y':42, 'kp22_x':43, 'kp22_y':44, 'kp23_x':45, 'kp23_y':46, 'kp24_x':47, 'kp24_y':48, 'kp25_x':49, 'kp25_y':50, 'kp26_x':51, 'kp26_y':52}):
         '''
         Arguments:
             height (int): The desired height of the output images in pixels.
@@ -62,10 +66,6 @@ class Resize:
 
         img_height, img_width = image.shape[:2]
 
-        xmin = self.labels_format['xmin']
-        ymin = self.labels_format['ymin']
-        xmax = self.labels_format['xmax']
-        ymax = self.labels_format['ymax']
         kp1_x = self.labels_format['kp1_x']
         kp1_y = self.labels_format['kp1_y']
         kp2_x = self.labels_format['kp2_x']
@@ -76,6 +76,49 @@ class Resize:
         kp4_y = self.labels_format['kp4_y']
         kp5_x = self.labels_format['kp5_x']
         kp5_y = self.labels_format['kp5_y']
+        kp6_x = self.labels_format['kp6_x']
+        kp6_y = self.labels_format['kp6_y']
+        kp7_x = self.labels_format['kp7_x']
+        kp7_y = self.labels_format['kp7_y']
+        kp8_x = self.labels_format['kp8_x']
+        kp8_y = self.labels_format['kp8_y']
+        kp9_x = self.labels_format['kp9_x']
+        kp9_y = self.labels_format['kp9_y']
+        kp10_x = self.labels_format['kp10_x']
+        kp10_y = self.labels_format['kp10_y']
+        kp11_x = self.labels_format['kp11_x']
+        kp11_y = self.labels_format['kp11_y']
+        kp12_x = self.labels_format['kp12_x']
+        kp12_y = self.labels_format['kp12_y']
+        kp13_x = self.labels_format['kp13_x']
+        kp13_y = self.labels_format['kp13_y']
+        kp14_x = self.labels_format['kp14_x']
+        kp14_y = self.labels_format['kp14_y']
+        kp15_x = self.labels_format['kp15_x']
+        kp15_y = self.labels_format['kp15_y']
+        kp16_x = self.labels_format['kp16_x']
+        kp16_y = self.labels_format['kp16_y']
+        kp17_x = self.labels_format['kp17_x']
+        kp17_y = self.labels_format['kp17_y']
+        kp18_x = self.labels_format['kp18_x']
+        kp18_y = self.labels_format['kp18_y']
+        kp19_x = self.labels_format['kp19_x']
+        kp19_y = self.labels_format['kp19_y']
+        kp20_x = self.labels_format['kp20_x']
+        kp20_y = self.labels_format['kp20_y']
+        kp21_x = self.labels_format['kp21_x']
+        kp21_y = self.labels_format['kp21_y']
+        kp22_x = self.labels_format['kp22_x']
+        kp22_y = self.labels_format['kp22_y']
+        kp23_x = self.labels_format['kp23_x']
+        kp23_y = self.labels_format['kp23_y']
+        kp24_x = self.labels_format['kp24_x']
+        kp24_y = self.labels_format['kp24_y']
+        kp25_x = self.labels_format['kp25_x']
+        kp25_y = self.labels_format['kp25_y']
+        kp26_x = self.labels_format['kp26_x']
+        kp26_y = self.labels_format['kp26_y']
+
         
         image = cv2.resize(image,
                            dsize=(self.out_width, self.out_height),
@@ -95,14 +138,14 @@ class Resize:
                 return image
         else:
             labels = np.copy(labels)
-            labels[:, [ymin, ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] = np.round(labels[:, [ymin, ymax, kp1_y, kp2_y, kp3_y, kp4_y, kp5_y]] * (self.out_height / img_height), decimals=0)
-            labels[:, [xmin, xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] = np.round(labels[:, [xmin, xmax, kp1_x, kp2_x, kp3_x, kp4_x, kp5_x]] * (self.out_width / img_width), decimals=0)
+            labels[:, [kp1_y,kp2_y,kp3_y,kp4_y,kp5_y,kp6_y,kp7_y,kp8_y,kp9_y,kp10_y,kp11_y,kp12_y,kp13_y,kp14_y,kp15_y,kp16_y,kp17_y,kp18_y,kp19_y,kp20_y, kp21_y,kp22_y,kp23_y,kp24_y,kp25_y,kp26_y]] = np.round(labels[:, [kp1_y,kp2_y,kp3_y,kp4_y,kp5_y,kp6_y,kp7_y,kp8_y,kp9_y,kp10_y,kp11_y,kp12_y,kp13_y,kp14_y,kp15_y,kp16_y,kp17_y,kp18_y,kp19_y,kp20_y, kp21_y,kp22_y,kp23_y,kp24_y,kp25_y,kp26_y]] * (self.out_height / img_height), decimals=0)
+            labels[:, [kp1_x,kp2_x,kp3_x,kp4_x,kp5_x,kp6_x,kp7_x,kp8_x,kp9_x,kp10_x,kp11_x,kp12_x,kp13_x,kp14_x,kp15_x,kp16_x,kp17_x,kp18_x,kp19_x,kp20_x, kp21_x,kp22_x,kp23_x,kp24_x,kp25_x,kp26_x]] = np.round(labels[:, [kp1_x,kp2_x,kp3_x,kp4_x,kp5_x,kp6_x,kp7_x,kp8_x,kp9_x,kp10_x,kp11_x,kp12_x,kp13_x,kp14_x,kp15_x,kp16_x,kp17_x,kp18_x,kp19_x,kp20_x, kp21_x,kp22_x,kp23_x,kp24_x,kp25_x,kp26_x]] * (self.out_width / img_width), decimals=0)
 
-            if not (self.box_filter is None):
-                self.box_filter.labels_format = self.labels_format
-                labels = self.box_filter(labels=labels,
-                                         image_height=self.out_height,
-                                         image_width=self.out_width)
+            # if not (self.box_filter is None):
+            #     self.box_filter.labels_format = self.labels_format
+            #     labels = self.box_filter(labels=labels,
+            #                              image_height=self.out_height,
+            #                              image_width=self.out_width)
 
             if return_inverter:
                 return image, labels, inverter
@@ -124,7 +167,11 @@ class ResizeRandomInterp:
                                       cv2.INTER_AREA,
                                       cv2.INTER_LANCZOS4],
                  box_filter=None,
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
+                 labels_format={'class_id': 0, 'kp1_x':1, 'kp1_y':2, 'kp2_x':3, 'kp2_y':4, 'kp3_x':5, 'kp3_y':6, 'kp4_x':7, 'kp4_y':8, 'kp5_x':9, 'kp5_y':10,
+                 'kp6_x':11, 'kp6_y':12, 'kp7_x':13, 'kp7_y':14, 'kp8_x':15, 'kp8_y':16, 'kp9_x':17, 'kp9_y':18, 'kp10_x':19, 'kp10_y':20,
+                 'kp11_x':21, 'kp11_y':22, 'kp12_x':23, 'kp12_y':24, 'kp13_x':25, 'kp13_y':26, 'kp14_x':27, 'kp14_y':28, 'kp15_x':29, 'kp15_y':30,
+                 'kp16_x':31, 'kp16_y':32, 'kp17_x':33, 'kp17_y':34, 'kp18_x':35, 'kp18_y':36, 'kp19_x':37, 'kp19_y':38, 'kp20_x':39, 'kp20_y':40,
+                 'kp21_x':41, 'kp21_y':42, 'kp22_x':43, 'kp22_y':44, 'kp23_x':45, 'kp23_y':46, 'kp24_x':47, 'kp24_y':48, 'kp25_x':49, 'kp25_y':50, 'kp26_x':51, 'kp26_y':52}):
         '''
         Arguments:
             height (int): The desired height of the output image in pixels.

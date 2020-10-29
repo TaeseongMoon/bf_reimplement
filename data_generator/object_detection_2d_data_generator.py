@@ -88,7 +88,10 @@ class DataGenerator:
                  labels=None,
                  image_ids=None,
                  eval_neutral=None,
-                 labels_output_format=('class_id', 'xmin', 'ymin', 'xmax', 'ymax','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y'),
+                 labels_output_format=('class_id','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y',
+                                           'kp6_x','kp6_y','kp7_x','kp7_y','kp8_x','kp8_y','kp9_x','kp9_y','kp10_x','kp10_y','kp11_x','kp11_y','kp12_x','kp12_y','kp13_x',
+                                           'kp13_y','kp14_x','kp14_y','kp15_x','kp15_y','kp16_x','kp16_y','kp17_x','kp17_y','kp18_x','kp18_y','kp19_x','kp19_y','kp20_x','kp20_y','kp21_x',
+                                           'kp21_y','kp22_x','kp22_y','kp23_x','kp23_y','kp24_x','kp24_y','kp25_x','kp25_y','kp26_x','kp26_y'),
                  verbose=True):
         '''
         Initializes the data generator. You can either load a dataset directly here in the constructor,
@@ -138,10 +141,6 @@ class DataGenerator:
         '''
         self.labels_output_format = labels_output_format
         self.labels_format={'class_id': labels_output_format.index('class_id'),
-                            'xmin': labels_output_format.index('xmin'),
-                            'ymin': labels_output_format.index('ymin'),
-                            'xmax': labels_output_format.index('xmax'),
-                            'ymax': labels_output_format.index('ymax'),
                             'kp1_x': labels_output_format.index('kp1_x'),
                             'kp1_y': labels_output_format.index('kp1_y'),
                             'kp2_x': labels_output_format.index('kp2_x'),
@@ -151,7 +150,49 @@ class DataGenerator:
                             'kp4_x': labels_output_format.index('kp4_x'),
                             'kp4_y': labels_output_format.index('kp4_y'),
                             'kp5_x': labels_output_format.index('kp5_x'),
-                            'kp5_y': labels_output_format.index('kp5_y')
+                            'kp5_y': labels_output_format.index('kp5_y'),
+                            'kp6_x': labels_output_format.index('kp6_x'),
+                            'kp6_y': labels_output_format.index('kp6_y'),
+                            'kp7_x': labels_output_format.index('kp7_x'),
+                            'kp7_y': labels_output_format.index('kp7_y'),
+                            'kp8_x': labels_output_format.index('kp8_x'),
+                            'kp8_y': labels_output_format.index('kp8_y'),
+                            'kp9_x': labels_output_format.index('kp9_x'),
+                            'kp9_y': labels_output_format.index('kp9_y'),
+                            'kp10_x': labels_output_format.index('kp10_x'),
+                            'kp10_y': labels_output_format.index('kp10_y'),
+                            'kp11_x': labels_output_format.index('kp11_x'),
+                            'kp11_y': labels_output_format.index('kp11_y'),
+                            'kp12_x': labels_output_format.index('kp12_x'),
+                            'kp12_y': labels_output_format.index('kp12_y'),
+                            'kp13_x': labels_output_format.index('kp13_x'),
+                            'kp13_y': labels_output_format.index('kp13_y'),
+                            'kp14_x': labels_output_format.index('kp14_x'),
+                            'kp14_y': labels_output_format.index('kp14_y'),
+                            'kp15_x': labels_output_format.index('kp15_x'),
+                            'kp15_y': labels_output_format.index('kp15_y'),
+                            'kp16_x': labels_output_format.index('kp16_x'),
+                            'kp16_y': labels_output_format.index('kp16_y'),
+                            'kp17_x': labels_output_format.index('kp17_x'),
+                            'kp17_y': labels_output_format.index('kp17_y'),
+                            'kp18_x': labels_output_format.index('kp18_x'),
+                            'kp18_y': labels_output_format.index('kp18_y'),
+                            'kp19_x': labels_output_format.index('kp19_x'),
+                            'kp19_y': labels_output_format.index('kp19_y'),
+                            'kp20_x': labels_output_format.index('kp20_x'),
+                            'kp20_y': labels_output_format.index('kp20_y'),
+                            'kp21_x': labels_output_format.index('kp21_x'),
+                            'kp21_y': labels_output_format.index('kp21_y'),
+                            'kp22_x': labels_output_format.index('kp22_x'),
+                            'kp22_y': labels_output_format.index('kp22_y'),
+                            'kp23_x': labels_output_format.index('kp23_x'),
+                            'kp23_y': labels_output_format.index('kp23_y'),
+                            'kp24_x': labels_output_format.index('kp24_x'),
+                            'kp24_y': labels_output_format.index('kp24_y'),
+                            'kp25_x': labels_output_format.index('kp25_x'),
+                            'kp25_y': labels_output_format.index('kp25_y'),
+                            'kp26_x': labels_output_format.index('kp26_x'),
+                            'kp26_y': labels_output_format.index('kp26_y'),
                             } # This dictionary is for internal use.
         
         self.dataset_size = 0 # As long as we haven't loaded anything yet, the dataset size is zero.
@@ -333,7 +374,7 @@ class DataGenerator:
         # First, just read in the CSV file lines and sort them.
 
         data = []
-        
+
         with open(self.labels_filename, newline='') as csvfile:
             csvread = csv.reader(csvfile, delimiter=',')
             next(csvread) # Skip the header row.
@@ -344,7 +385,10 @@ class DataGenerator:
                     box = [] # Store the box class and coordinates here
                     box.append(row[self.input_format.index('image_name')].strip()) # Select the image name column in the input format and append its content to `box`
                     for element in self.labels_output_format: # For each element in the output format (where the elements are the class ID and the four box coordinates)...
-                        box.append(float(row[self.input_format.index(element)].strip())) # ...select the respective column in the input format and append it to `box`.
+                        if element == 'class_id':
+                            box.append(float(1))
+                        else:
+                            box.append(float(row[self.input_format.index(element)].strip())) # ...select the respective column in the input format and append it to `box`.
                     data.append(box)
 
         data = sorted(data) # The data needs to be sorted, otherwise the next step won't give the correct result
@@ -1106,24 +1150,24 @@ class DataGenerator:
                 # Check for degenerate boxes in this batch item.
                 #########################################################################################
 
-                if not (self.labels is None):
+                # if not (self.labels is None):
 
-                    xmin = self.labels_format['xmin']
-                    ymin = self.labels_format['ymin']
-                    xmax = self.labels_format['xmax']
-                    ymax = self.labels_format['ymax']
+                #     xmin = self.labels_format['xmin']
+                #     ymin = self.labels_format['ymin']
+                #     xmax = self.labels_format['xmax']
+                #     ymax = self.labels_format['ymax']
 
-                    if np.any(batch_y[i][:,xmax] - batch_y[i][:,xmin] <= 0) or np.any(batch_y[i][:,ymax] - batch_y[i][:,ymin] <= 0):
-                        if degenerate_box_handling == 'warn':
-                            warnings.warn("Detected degenerate ground truth bounding boxes for batch item {} with bounding boxes {}, ".format(i, batch_y[i]) +
-                                          "i.e. bounding boxes where xmax <= xmin and/or ymax <= ymin. " +
-                                          "This could mean that your dataset contains degenerate ground truth boxes, or that any image transformations you may apply might " +
-                                          "result in degenerate ground truth boxes, or that you are parsing the ground truth in the wrong coordinate format." +
-                                          "Degenerate ground truth bounding boxes may lead to NaN errors during the training.")
-                        elif degenerate_box_handling == 'remove':
-                            batch_y[i] = box_filter(batch_y[i])
-                            if (batch_y[i].size == 0) and not keep_images_without_gt:
-                                batch_items_to_remove.append(i)
+                #     if np.any(batch_y[i][:,xmax] - batch_y[i][:,xmin] <= 0) or np.any(batch_y[i][:,ymax] - batch_y[i][:,ymin] <= 0):
+                #         if degenerate_box_handling == 'warn':
+                #             warnings.warn("Detected degenerate ground truth bounding boxes for batch item {} with bounding boxes {}, ".format(i, batch_y[i]) +
+                #                           "i.e. bounding boxes where xmax <= xmin and/or ymax <= ymin. " +
+                #                           "This could mean that your dataset contains degenerate ground truth boxes, or that any image transformations you may apply might " +
+                #                           "result in degenerate ground truth boxes, or that you are parsing the ground truth in the wrong coordinate format." +
+                #                           "Degenerate ground truth bounding boxes may lead to NaN errors during the training.")
+                #         elif degenerate_box_handling == 'remove':
+                #             batch_y[i] = box_filter(batch_y[i])
+                #             if (batch_y[i].size == 0) and not keep_images_without_gt:
+                #                 batch_items_to_remove.append(i)
 
             #########################################################################################
             # Remove any items we might not want to keep from the batch.
@@ -1133,7 +1177,7 @@ class DataGenerator:
                 for j in sorted(batch_items_to_remove, reverse=True):
                     # This isn't efficient, but it hopefully shouldn't need to be done often anyway.
                     
-                    batch_X.pop(j)
+                    batch_X.pop(j) 
                     batch_filenames.pop(j)
                     if batch_inverse_transforms: batch_inverse_transforms.pop(j)
                     if not (self.labels is None): batch_y.pop(j)
@@ -1173,7 +1217,7 @@ class DataGenerator:
             #########################################################################################
             # Compose the output.
             #########################################################################################
-
+            
             ret = []
             if 'processed_images' in returns: ret.append(batch_X)
             if 'encoded_labels' in returns: ret.append(batch_y_encoded)

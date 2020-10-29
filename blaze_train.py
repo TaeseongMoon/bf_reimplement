@@ -75,9 +75,10 @@ with tf.device('/gpu:0'):
     model.compile(optimizer=adam, loss=ssd_loss.compute_loss)
     model.summary()
 
-    train_images_dir = "./data/cropped_widerface/images/"
-    # val_images_dir = '../BlazeFace/data/WIDER_train/images/'
-    train_anno_file = "./data/train_annos_cropped.csv"
+    train_images_dir = "/data/train/"
+    val_images_dir = "/data/valid"
+    train_anno_file = "/data/train.csv"
+    val_anno_file = "/data/valid.csv"
     # val_anno_file = "./data/valid_annos_split.csv"
     
 
@@ -88,18 +89,27 @@ with tf.device('/gpu:0'):
     #train_dataset = DataGenerator(load_images_into_memory=True, hdf5_dataset_path='wider_train_new.h5')
     #val_dataset = DataGenerator(load_images_into_memory=True, hdf5_dataset_path='wider_val_new_v2.h5')
     train_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None)
-    # val_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None)
+    val_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None)
     # 2: Parse the image and label lists for the training and validation datasets.
 
     # Ground truth
     train_labels_filename = train_anno_file
-    # val_labels_filename   = val_anno_file
+    val_labels_filename   = val_anno_file
 
     train_dataset.parse_csv(images_dir=train_images_dir,
                             labels_filename=train_labels_filename,
-                            input_format=['image_name', 'xmin', 'xmax', 'ymin', 'ymax','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y','class_id'], # This is the order of the first six columns in the CSV file that contains the labels for your dataset. If your labels are in XML format, maybe the XML parser will be helpful, check the documentation.
+                            input_format=['image_name','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y',
+                                           'kp6_x','kp6_y','kp7_x','kp7_y','kp8_x','kp8_y','kp9_x','kp9_y','kp10_x','kp10_y','kp11_x','kp11_y','kp12_x','kp12_y','kp13_x',
+                                           'kp13_y','kp14_x','kp14_y','kp15_x','kp15_y','kp16_x','kp16_y','kp17_x','kp17_y','kp18_x','kp18_y','kp19_x','kp19_y','kp20_x','kp20_y','kp21_x',
+                                           'kp21_y','kp22_x','kp22_y','kp23_x','kp23_y','kp24_x','kp24_y','kp25_x','kp25_y','kp26_x','kp26_y','class_id'], # This is the order of the first six columns in the CSV file that contains the labels for your dataset. If your labels are in XML format, maybe the XML parser will be helpful, check the documentation.
                             include_classes='all')
-
+    val_dataset.parse_csv(images_dir=val_images_dir,
+                            labels_filename=val_labels_filename,
+                            input_format=['image_name','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y',
+                                            'kp6_x','kp6_y','kp7_x','kp7_y','kp8_x','kp8_y','kp9_x','kp9_y','kp10_x','kp10_y','kp11_x','kp11_y','kp12_x','kp12_y','kp13_x',
+                                            'kp13_y','kp14_x','kp14_y','kp15_x','kp15_y','kp16_x','kp16_y','kp17_x','kp17_y','kp18_x','kp18_y','kp19_x','kp19_y','kp20_x','kp20_y','kp21_x',
+                                            'kp21_y','kp22_x','kp22_y','kp23_x','kp23_y','kp24_x','kp24_y','kp25_x','kp25_y','kp26_x','kp26_y','class_id'], # This is the order of the first six columns in the CSV file that contains the labels for your dataset. If your labels are in XML format, maybe the XML parser will be helpful, check the documentation.
+                            include_classes='all')
     # val_dataset.parse_csv(images_dir=val_images_dir,
     #                     labels_filename=val_labels_filename,
     #                         input_format=['image_name', 'xmin', 'xmax', 'ymin', 'ymax','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y', 'class_id'],
@@ -163,22 +173,22 @@ with tf.device('/gpu:0'):
                                                     'encoded_labels'},
                                             keep_images_without_gt=False)
 
-    # val_generator = val_dataset.generate(batch_size=batch_size,
-    #                                     shuffle=False,
-    #                                     transformations=[convert_to_3_channels,
-    #                                                     resize],
-    #                                     label_encoder=ssd_input_encoder,
-    #                                     returns={'processed_images',
-    #                                             'encoded_labels'},
-    #                                     keep_images_without_gt=False)
+    val_generator = val_dataset.generate(batch_size=batch_size,
+                                        shuffle=False,
+                                        transformations=[convert_to_3_channels,
+                                                        resize],
+                                        label_encoder=ssd_input_encoder,
+                                        returns={'processed_images',
+                                                'encoded_labels'},
+                                        keep_images_without_gt=False)
 
     # Get the number of samples in the training and validations datasets.
     train_dataset_size = train_dataset.get_dataset_size()
-    # val_dataset_size   = val_dataset.get_dataset_size()
+    val_dataset_size   = val_dataset.get_dataset_size()
     print("Number of images in the training dataset:\t{:>6}".format(train_dataset_size))
     # print("Number of images in the validation dataset:\t{:>6}".format(val_dataset_size))
 
-    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_with_landmark_simple_without_box_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
+    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_with_26landmark_without_box_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
                                     monitor='loss',
                                     verbose=1,
                                     save_best_only=True,
@@ -191,13 +201,13 @@ with tf.device('/gpu:0'):
 #                         separator=',',
 #                         append=True)
 
-    log_dir = './logs/scalars/'+ 'without_box_'+datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = './logs/scalars/'+ 'our_data_'+datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = TensorBoard(log_dir=log_dir)
     terminate_on_nan = TerminateOnNaN()
 
     callbacks = [model_checkpoint,
                 # csv_logger,
-                tensorboard_callback,
+                # tensorboard_callback,
                 terminate_on_nan]
 
     initial_epoch   = 0
@@ -208,5 +218,7 @@ with tf.device('/gpu:0'):
                         steps_per_epoch=steps_per_epoch,
                         epochs=final_epoch,
                         callbacks=callbacks,
-                        initial_epoch=initial_epoch
+                        initial_epoch=initial_epoch,
+                        validation_data=val_generator,
+                        validation_steps=ceil(val_dataset_size/batch_size),
                         )

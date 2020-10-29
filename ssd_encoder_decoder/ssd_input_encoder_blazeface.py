@@ -20,7 +20,7 @@ NOTICE: This file is a modified version by Viet Anh Nguyen (vietanh@vietanhdev.c
 
 from __future__ import division
 import numpy as np
-
+import tensorflow as tf
 from bounding_box_utils.bounding_box_utils import iou, convert_coordinates
 from ssd_encoder_decoder.matching_utils import match_bipartite_greedy, match_multi
 
@@ -286,20 +286,7 @@ class SSDInputEncoder:
 
         # Mapping to define which indices represent which coordinates in the ground truth.
         class_id = 0
-        xmin = 1
-        ymin = 2
-        xmax = 3
-        ymax = 4
-        kp1_x = 5
-        kp1_y = 6
-        kp2_x = 7
-        kp2_y = 8
-        kp3_x = 9
-        kp3_y = 10
-        kp4_x = 11
-        kp4_y = 12
-        kp5_x = 13
-        kp5_y = 14
+        
         batch_size = len(ground_truth_labels)
 
         ##################################################################################
@@ -326,25 +313,26 @@ class SSDInputEncoder:
             labels = ground_truth_labels[i].astype(np.float) # The labels for this batch item
 
             # Check for degenerate ground truth bounding boxes before attempting any computations.
-            if np.any(labels[:,[xmax]] - labels[:,[xmin]] <= 0) or np.any(labels[:,[ymax]] - labels[:,[ymin]] <= 0):
-                raise DegenerateBoxError("SSDInputEncoder detected degenerate ground truth bounding boxes for batch item {} with bounding boxes {}, ".format(i, labels) +
-                                         "i.e. bounding boxes where xmax <= xmin and/or ymax <= ymin. Degenerate ground truth " +
-                                         "bounding boxes will lead to NaN errors during the training.")
+            # if np.any(labels[:,[xmax]] - labels[:,[xmin]] <= 0) or np.any(labels[:,[ymax]] - labels[:,[ymin]] <= 0):
+            #     raise DegenerateBoxError("SSDInputEncoder detected degenerate ground truth bounding boxes for batch item {} with bounding boxes {}, ".format(i, labels) +
+            #                              "i.e. bounding boxes where xmax <= xmin and/or ymax <= ymin. Degenerate ground truth " +
+            #                              "bounding boxes will lead to NaN errors during the training.")
 
             # Maybe normalize the box coordinates.
             if self.normalize_coords:
-                labels[:,[ymin,ymax,kp1_y,kp2_y,kp3_y,kp4_y,kp5_y]] /= self.img_height # Normalize ymin and ymax relative to the image height
-                labels[:,[xmin,xmax,kp1_x,kp2_x,kp3_x,kp4_x,kp5_x]] /= self.img_width # Normalize xmin and xmax relative to the image width
+                labels[:,2:53:2] /= self.img_height # Normalize ymin and ymax relative to the image height
+                labels[:,1:52:2] /= self.img_width # Normalize xmin and xmax relative to the image width
                 
             # Maybe convert the box coordinate format.
-            if self.coords == 'centroids':
-                labels = convert_coordinates(labels, start_index=xmin, conversion='corners2centroids', border_pixels=self.border_pixels)
-            elif self.coords == 'minmax':
-                labels = convert_coordinates(labels, start_index=xmin, conversion='corners2minmax')
- 
+            # if self.coords == 'centroids':
+            #     labels = convert_coordinates(labels, start_index=xmin, conversion='corners2centroids', border_pixels=self.border_pixels)
+            # elif self.coords == 'minmax':
+            #     labels = convert_coordinates(labels, start_index=xmin, conversion='corners2minmax')
+
+            # indices_x = np.argwhere(labels==0)
             classes_one_hot = class_vectors[labels[:, class_id].astype(np.int)] # The one-hot class IDs for the ground truth boxes of this batch item
             # labels_one_hot = np.concatenate([classes_one_hot, labels[:, [xmin, ymin, xmax, ymax]]], axis=-1) # The one-hot version of the labels for this batch item
-            landmark_one_hot = np.concatenate([classes_one_hot, labels[:, [kp1_x, kp1_y, kp2_x, kp2_y, kp3_x, kp3_y, kp4_x, kp4_y, kp5_x, kp5_y]]], axis=-1)
+            landmark_one_hot = np.concatenate([classes_one_hot, labels[:, 1:53]], axis=-1)
             
             # Compute the IoU similarities between all anchor boxes and all ground truth boxes for this batch item.
             # This is a matrix of shape `(num_ground_truth_boxes, num_anchor_boxes)`.
@@ -359,7 +347,7 @@ class SSDInputEncoder:
 
             # Write the ground truth data to the matched anchor boxes.
             # y_encoded[i, bipartite_matches, :-8] = labels_one_hot
-            
+   
             for z in range(y_encoded.shape[1]):
                 y_encoded[i, z, :-8] = landmark_one_hot
             # y_encoded[i, 135, :-8] = landmark_one_hot
@@ -395,20 +383,9 @@ class SSDInputEncoder:
         ##################################################################################
         
         if self.coords == 'centroids':
-            y_encoded[:,:,[-18,-17]] -= y_encoded[:,:,[-8,-7]]
-            y_encoded[:,:,[-18,-17]] /= y_encoded[:,:,[-6,-5]] * y_encoded[:,:,[-4,-3]]
-            y_encoded[:,:,[-16,-15]] -= y_encoded[:,:,[-8,-7]]
-            y_encoded[:,:,[-16,-15]] /= y_encoded[:,:,[-6,-5]] * y_encoded[:,:,[-4,-3]]
-            y_encoded[:,:,[-14,-13]] -= y_encoded[:,:,[-8,-7]]
-            y_encoded[:,:,[-14,-13]] /= y_encoded[:,:,[-6,-5]] * y_encoded[:,:,[-4,-3]]
-            y_encoded[:,:,[-12,-11]] -= y_encoded[:,:,[-8,-7]]
-            y_encoded[:,:,[-12,-11]] /= y_encoded[:,:,[-6,-5]] * y_encoded[:,:,[-4,-3]]
-            y_encoded[:,:,[-10,-9]] -= y_encoded[:,:,[-8,-7]]
-            y_encoded[:,:,[-10,-9]] /= y_encoded[:,:,[-6,-5]] * y_encoded[:,:,[-4,-3]]
-            # y_encoded[:,:,[-22,-21]] -= y_encoded[:,:,[-8,-7]] # cx(gt) - cx(anchor), cy(gt) - cy(anchor)
-            # y_encoded[:,:,[-22,-21]] /= y_encoded[:,:,[-6,-5]] * y_encoded[:,:,[-4,-3]] # (cx(gt) - cx(anchor)) / w(anchor) / cx_variance, (cy(gt) - cy(anchor)) / h(anchor) / cy_variance
-            # y_encoded[:,:,[-20,-19]] /= y_encoded[:,:,[-6,-5]] # w(gt) / w(anchor), h(gt) / h(anchor)
-            # y_encoded[:,:,[-20,-19]] = np.log(y_encoded[:,:,[-20,-19]]) / y_encoded[:,:,[-2,-1]] # ln(w(gt) / w(anchor)) / w_variance, ln(h(gt) / h(anchor)) / h_variance (ln == natural logarithm)
+            y_encoded[:,:,1:53] -= np.tile(y_encoded[:,:,[-8, -7]], 26)
+            y_encoded[:,:,1:53] /= np.tile(y_encoded[:,:,[-6, -5]], 26) * np.tile(y_encoded[:,:,[-4,-3]], 26)
+            
         elif self.coords == 'corners':
             y_encoded[:,:,-22:-18] -= y_encoded[:,:,-8:-4] # (gt - anchor) for all four coordinates
             y_encoded[:,:,[-22,-20]] /= np.expand_dims(y_encoded[:,:,-6] - y_encoded[:,:,-8], axis=-1) # (xmin(gt) - xmin(anchor)) / w(anchor), (xmax(gt) - xmax(anchor)) / w(anchor)
@@ -584,10 +561,11 @@ class SSDInputEncoder:
             # Prepend one dimension to `self.boxes_list` to account for the batch size and tile it along.
             # The result will be a 5D tensor of shape `(batch_size, feature_map_height, feature_map_width, n_boxes, 4)`
             ld_box = boxes[...,:2]
-            ld_box = np.concatenate((ld_box,ld_box,ld_box,ld_box,ld_box), axis=3)
+            ld_box = np.concatenate((ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box), axis=3)
+
             ld_box = np.expand_dims(ld_box, axis=0)
             ld_box = np.tile(ld_box, (batch_size, 1, 1, 1, 1))
-            ld_box = np.reshape(ld_box,(batch_size,-1,10))
+            ld_box = np.reshape(ld_box,(batch_size,-1,52))
             boxes = np.expand_dims(boxes, axis=0)
             boxes = np.tile(boxes, (batch_size, 1, 1, 1, 1))
 
