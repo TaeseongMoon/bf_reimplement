@@ -383,8 +383,8 @@ class SSDInputEncoder:
         ##################################################################################
         
         if self.coords == 'centroids':
-            y_encoded[:,:,1:53] -= np.tile(y_encoded[:,:,[-8, -7]], 26)
-            y_encoded[:,:,1:53] /= np.tile(y_encoded[:,:,[-6, -5]], 26) * np.tile(y_encoded[:,:,[-4,-3]], 26)
+            y_encoded[:,:,2:54] -= np.tile(y_encoded[:,:,[-8, -7]], 26)
+            y_encoded[:,:,2:54] /= np.tile(y_encoded[:,:,[-6, -5]], 26) * np.tile(y_encoded[:,:,[-4,-3]], 26)
             
         elif self.coords == 'corners':
             y_encoded[:,:,-22:-18] -= y_encoded[:,:,-8:-4] # (gt - anchor) for all four coordinates
@@ -512,9 +512,9 @@ class SSDInputEncoder:
             boxes_tensor[:,:,:,[1, 3]] = y_coords
 
         # `normalize_coords` is enabled, normalize the coordinates to be within [0,1]
-        if self.normalize_coords:
-            boxes_tensor[:, :, :, [0, 2]] /= self.img_width
-            boxes_tensor[:, :, :, [1, 3]] /= self.img_height
+        # if self.normalize_coords:
+        #     boxes_tensor[:, :, :, [0, 2]] /= self.img_width
+        #     boxes_tensor[:, :, :, [1, 3]] /= self.img_height
 
         # TODO: Implement box limiting directly for `(cx, cy, w, h)` so that we don't have to unnecessarily convert back and forth.
         if self.coords == 'centroids':
@@ -561,8 +561,8 @@ class SSDInputEncoder:
             # Prepend one dimension to `self.boxes_list` to account for the batch size and tile it along.
             # The result will be a 5D tensor of shape `(batch_size, feature_map_height, feature_map_width, n_boxes, 4)`
             ld_box = boxes[...,:2]
-            ld_box = np.concatenate((ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box), axis=3)
-
+            # ld_box = np.concatenate((ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box), axis=3)
+            ld_box = np.tile(ld_box, 26)
             ld_box = np.expand_dims(ld_box, axis=0)
             ld_box = np.tile(ld_box, (batch_size, 1, 1, 1, 1))
             ld_box = np.reshape(ld_box,(batch_size,-1,52))

@@ -207,7 +207,7 @@ with tf.device('/gpu:0'):
 
     callbacks = [model_checkpoint,
                 # csv_logger,
-                # tensorboard_callback,
+                tensorboard_callback,
                 terminate_on_nan]
 
     initial_epoch   = 0

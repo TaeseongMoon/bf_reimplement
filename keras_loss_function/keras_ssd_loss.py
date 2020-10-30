@@ -100,7 +100,7 @@ class SSDLoss:
     def make_mask(self, y_encoded):
         y_encoded_copied = tf.identity(y_encoded)
         repeat = tf.constant([1, 1, 26])
-        y_encoded_masker = tf.multiply(y_encoded_copied[:,:,1:53], tf.multiply(tf.tile(y_encoded_copied[:,:,-6:-4], repeat), tf.tile(y_encoded_copied[:,:,-4:-2], repeat)))
+        y_encoded_masker = tf.multiply(y_encoded_copied[:,:,2:54], tf.multiply(tf.tile(y_encoded_copied[:,:,-6:-4], repeat), tf.tile(y_encoded_copied[:,:,-4:-2], repeat)))
         y_encoded_masker = tf.add(y_encoded_masker, tf.tile(y_encoded_copied[:,:,-8:-6], repeat))
         y_encoded_masker = tf.pad(y_encoded_masker, tf.constant([[0, 0], [0, 0], [1, 0]]), 'CONSTANT', constant_values=1)
         mask_landm = tf.equal(y_encoded_masker, 0) 
