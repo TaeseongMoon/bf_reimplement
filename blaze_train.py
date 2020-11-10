@@ -3,14 +3,13 @@ import math
 import os
 from datetime import datetime
 from keras.optimizers import Adam, SGD
-from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TerminateOnNaN, CSVLogger, TensorBoard
+from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TerminateOnNaN, TensorBoard
 from keras import backend as K
 from keras.models import load_model
 from math import ceil
 import numpy as np
 from models.keras_blazeface import blazeface
 from keras_loss_function.keras_ssd_loss import SSDLoss
-from keras_layers.keras_layer_AnchorBoxes import AnchorBoxes
 from keras_layers.keras_layer_DecodeDetections import DecodeDetections
 from keras_layers.keras_layer_DecodeDetectionsFast import DecodeDetectionsFast
 from keras_layers.keras_layer_L2Normalization import L2Normalization
@@ -23,11 +22,14 @@ from data_generator.object_detection_2d_geometric_ops import Resize
 from data_generator.object_detection_2d_photometric_ops import ConvertTo3Channels
 from data_generator.data_augmentation_chain_original_ssd import SSDDataAugmentation
 from data_generator.object_detection_2d_misc_utils import apply_inverse_transforms
+import os
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
 img_height = 128 # Height of the model input images
 img_width = 128 # Width of the model input images
 img_channels = 3 # Number of color channels of the model input images
-mean_color = [121, 111, 105] # The per-channel mean of the images in the dataset. Do not change this value if you're using any of the pre-trained weights.
+mean_color = [107, 105, 109] # The per-channel mean of the images in the dataset. Do not change this value if you're using any of the pre-trained weights.
 swap_channels = [2, 1, 0] # The color channel order in the original SSD is BGR, so we'll have the model reverse the color channel order of the input images.
 n_classes = 1 # Number of positive classes, e.g. 20 for Pascal VOC, 80 for MS COCO
 scales = [[0.2]]
@@ -75,10 +77,10 @@ with tf.device('/gpu:0'):
     model.compile(optimizer=adam, loss=ssd_loss.compute_loss)
     model.summary()
 
-    train_images_dir = "/data/train/"
-    val_images_dir = "/data/valid"
-    train_anno_file = "/data/train.csv"
-    val_anno_file = "/data/valid.csv"
+    train_images_dir = "/data/"
+    val_images_dir = "/data/"
+    train_anno_file = "/data/train_with_box.csv"
+    val_anno_file = "/data/valid_with_box.csv"
     # val_anno_file = "./data/valid_annos_split.csv"
     
 
@@ -186,22 +188,20 @@ with tf.device('/gpu:0'):
     train_dataset_size = train_dataset.get_dataset_size()
     val_dataset_size   = val_dataset.get_dataset_size()
     print("Number of images in the training dataset:\t{:>6}".format(train_dataset_size))
-    # print("Number of images in the validation dataset:\t{:>6}".format(val_dataset_size))
+    print("Number of images in the validation dataset:\t{:>6}".format(val_dataset_size))
 
     model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_with_26landmark_without_box_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
-                                    monitor='loss',
+                                    monitor='val_loss',
                                     verbose=1,
                                     save_best_only=True,
                                     save_weights_only=False,
                                     mode='auto',
                                     period=1)
-    #model_checkpoint.best = 
 
-#     csv_logger = CSVLogger(filename='blazeface_landmark_wider_simple_v3_training_log.csv',
-#                         separator=',',
-#                         append=True)
 
     log_dir = './logs/scalars/'+ 'our_data_'+datetime.now().strftime("%Y%m%d-%H%M%S")
+    file_writer = tf.summary.create_file_writer(log_dir + 'metrics')
+    # file_writer.set_as_default()
     tensorboard_callback = TensorBoard(log_dir=log_dir)
     terminate_on_nan = TerminateOnNaN()
 

@@ -330,6 +330,7 @@ class SSDInputEncoder:
             #     labels = convert_coordinates(labels, start_index=xmin, conversion='corners2minmax')
 
             # indices_x = np.argwhere(labels==0)
+            
             classes_one_hot = class_vectors[labels[:, class_id].astype(np.int)] # The one-hot class IDs for the ground truth boxes of this batch item
             # labels_one_hot = np.concatenate([classes_one_hot, labels[:, [xmin, ymin, xmax, ymax]]], axis=-1) # The one-hot version of the labels for this batch item
             landmark_one_hot = np.concatenate([classes_one_hot, labels[:, 1:53]], axis=-1)
@@ -347,7 +348,7 @@ class SSDInputEncoder:
 
             # Write the ground truth data to the matched anchor boxes.
             # y_encoded[i, bipartite_matches, :-8] = labels_one_hot
-   
+            
             for z in range(y_encoded.shape[1]):
                 y_encoded[i, z, :-8] = landmark_one_hot
             # y_encoded[i, 135, :-8] = landmark_one_hot
@@ -383,8 +384,8 @@ class SSDInputEncoder:
         ##################################################################################
         
         if self.coords == 'centroids':
-            y_encoded[:,:,2:54] -= np.tile(y_encoded[:,:,[-8, -7]], 26)
-            y_encoded[:,:,2:54] /= np.tile(y_encoded[:,:,[-6, -5]], 26) * np.tile(y_encoded[:,:,[-4,-3]], 26)
+            y_encoded[:,:,2:54] -= np.tile(y_encoded[:,:,[-8, -7]], 26) # cx(gt) - cx(anchor), cy(gt) - cy(anchor)
+            y_encoded[:,:,2:54] /= np.tile(y_encoded[:,:,[-6, -5]], 26) * np.tile(y_encoded[:,:,[-4,-3]], 26) # (cx(gt) - cx(anchor)) / w(anchor) / cx_variance, (cy(gt) - cy(anchor)) / h(anchor) / cy_variance
             
         elif self.coords == 'corners':
             y_encoded[:,:,-22:-18] -= y_encoded[:,:,-8:-4] # (gt - anchor) for all four coordinates
@@ -558,10 +559,7 @@ class SSDInputEncoder:
         ld_batch = []
 
         for boxes in self.boxes_list:
-            # Prepend one dimension to `self.boxes_list` to account for the batch size and tile it along.
-            # The result will be a 5D tensor of shape `(batch_size, feature_map_height, feature_map_width, n_boxes, 4)`
             ld_box = boxes[...,:2]
-            # ld_box = np.concatenate((ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box,ld_box), axis=3)
             ld_box = np.tile(ld_box, 26)
             ld_box = np.expand_dims(ld_box, axis=0)
             ld_box = np.tile(ld_box, (batch_size, 1, 1, 1, 1))
@@ -569,32 +567,17 @@ class SSDInputEncoder:
             boxes = np.expand_dims(boxes, axis=0)
             boxes = np.tile(boxes, (batch_size, 1, 1, 1, 1))
 
-            # Now reshape the 5D tensor above into a 3D tensor of shape
-            # `(batch, feature_map_height * feature_map_width * n_boxes, 4)`. The resulting
-            # order of the tensor content will be identical to the order obtained from the reshaping operation
-            # in our Keras model (we're using the Tensorflow backend, and tf.reshape() and np.reshape()
-            # use the same default index order, which is C-like index ordering)
             boxes = np.reshape(boxes, (batch_size, -1, 4))
             ld_batch.append(ld_box)
             boxes_batch.append(boxes)
 
         # Concatenate the anchor tensors from the individual layers to one.
         boxes_tensor = np.concatenate(boxes_batch, axis=1)
-        
-        # 3: Create a template tensor to hold the one-hot class encodings of shape `(batch, #boxes, #classes)`
-        #    It will contain all zeros for now, the classes will be set in the matching process that follows
         classes_tensor = np.zeros((batch_size, boxes_tensor.shape[1], self.n_classes))
-        # landmark_tensor = np.zeros((batch_size, boxes_tensor.shape[1], 10))
         landmark_tensor = np.concatenate(ld_batch, axis=1)
-        # 4: Create a tensor to contain the variances. This tensor has the same shape as `boxes_tensor` and simply
-        #    contains the same 4 variance values for every position in the last axis.
         variances_tensor = np.zeros_like(boxes_tensor)
         variances_tensor += self.variances # Long live broadcasting
 
-        # 4: Concatenate the classes, boxes and variances tensors to get our final template for y_encoded. We also need
-        #    another tensor of the shape of `boxes_tensor` as a space filler so that `y_encoding_template` has the same
-        #    shape as the SSD model output tensor. The content of this tensor is irrelevant, we'll just use
-        #    `boxes_tensor` a second time.
         y_encoding_template = np.concatenate((classes_tensor, landmark_tensor, boxes_tensor, variances_tensor), axis=2)
 
         if diagnostics:
