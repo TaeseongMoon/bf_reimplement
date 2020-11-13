@@ -374,7 +374,7 @@ class DataGenerator:
         # First, just read in the CSV file lines and sort them.
 
         data = []
- 
+        
         with open(self.labels_filename, newline='') as csvfile:
             csvread = csv.reader(csvfile, delimiter=',')
             next(csvread) # Skip the header row.
@@ -402,6 +402,7 @@ class DataGenerator:
         current_labels = [] # The list where we collect all ground truth boxes for a given image
         current_bbox = []
         add_to_dataset = False
+        
         for i, box in enumerate(data):
 
             if box[0] == current_file: # If this box (i.e. this line of the CSV file) belongs to the current image file
@@ -601,7 +602,7 @@ class DataGenerator:
         #############################################################################################
 
         current = 0
-
+        
         while True:
 
             batch_X, batch_y = [], []
@@ -788,10 +789,7 @@ class DataGenerator:
             #########################################################################################
             # If we have a label encoder, encode our labels.
             #########################################################################################
-            for idx_label, label_check in enumerate(batch_y):
-                if label_check.shape[0] == 2:
-                    print(batch_y)
-                    print(batch_filenames[idx_label])
+
             if not (label_encoder is None or self.labels is None):
 
                 if ('matched_anchors' in returns) and isinstance(label_encoder, SSDInputEncoder):

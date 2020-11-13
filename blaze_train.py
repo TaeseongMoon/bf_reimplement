@@ -39,7 +39,7 @@ offsets = None # The offsets of the first anchor box center points from the top 
 clip_boxes = False # Whether or not to clip the anchor boxes to lie entirely within the image boundaries
 variances = [0.1, 0.1, 0.2, 0.2] # The variances by which the encoded target coordinates are divided as in the original implementation
 normalize_coords = True
-
+batch_size = 32 # Change the batch size if you like, or if you run into GPU memory issues.
 # 1: Build the Keras model.
 with tf.device('/gpu:0'):
     K.clear_session() # Clear previous models from memory.
@@ -100,14 +100,14 @@ with tf.device('/gpu:0'):
 
     train_dataset.parse_csv(images_dir=train_images_dir,
                             labels_filename=train_labels_filename,
-                            input_format=['image_name','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y',
+                            input_format=['image_name','xmin','ymin','xmax','ymax','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y',
                                            'kp6_x','kp6_y','kp7_x','kp7_y','kp8_x','kp8_y','kp9_x','kp9_y','kp10_x','kp10_y','kp11_x','kp11_y','kp12_x','kp12_y','kp13_x',
                                            'kp13_y','kp14_x','kp14_y','kp15_x','kp15_y','kp16_x','kp16_y','kp17_x','kp17_y','kp18_x','kp18_y','kp19_x','kp19_y','kp20_x','kp20_y','kp21_x',
                                            'kp21_y','kp22_x','kp22_y','kp23_x','kp23_y','kp24_x','kp24_y','kp25_x','kp25_y','kp26_x','kp26_y','class_id'], # This is the order of the first six columns in the CSV file that contains the labels for your dataset. If your labels are in XML format, maybe the XML parser will be helpful, check the documentation.
                             include_classes='all')
     val_dataset.parse_csv(images_dir=val_images_dir,
                             labels_filename=val_labels_filename,
-                            input_format=['image_name','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y',
+                            input_format=['image_name','xmin','ymin','xmax','ymax','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y',
                                             'kp6_x','kp6_y','kp7_x','kp7_y','kp8_x','kp8_y','kp9_x','kp9_y','kp10_x','kp10_y','kp11_x','kp11_y','kp12_x','kp12_y','kp13_x',
                                             'kp13_y','kp14_x','kp14_y','kp15_x','kp15_y','kp16_x','kp16_y','kp17_x','kp17_y','kp18_x','kp18_y','kp19_x','kp19_y','kp20_x','kp20_y','kp21_x',
                                             'kp21_y','kp22_x','kp22_y','kp23_x','kp23_y','kp24_x','kp24_y','kp25_x','kp25_y','kp26_x','kp26_y','class_id'], # This is the order of the first six columns in the CSV file that contains the labels for your dataset. If your labels are in XML format, maybe the XML parser will be helpful, check the documentation.
@@ -122,16 +122,7 @@ with tf.device('/gpu:0'):
     # option in the constructor, because in that cas the images are in memory already anyway. If you don't
     # want to create HDF5 datasets, comment out the subsequent two function calls.
     
-    # train_dataset.create_hdf5_dataset(file_path='fddb_train.h5',
-    #                                   resize=False,
-    #                                   variable_image_size=True,
-    #                                   verbose=True)
-
-    # val_dataset.create_hdf5_dataset(file_path='fddb_val.h5',
-    #                                 resize=False,
-    #                                 variable_image_size=True,
-    #                                 verbose=True)
-    batch_size = 32 # Change the batch size if you like, or if you run into GPU memory issues.
+    
 
     # 4: Set the image transformations for pre-processing and data augmentation options.
 
@@ -148,8 +139,8 @@ with tf.device('/gpu:0'):
     # 5: Instantiate an encoder that can encode ground truth labels into the format needed by the SSD loss function.
 
     # The encoder constructor needs the spatial dimensions of the model's predictor layers to create the anchor boxes.
-    predictor_sizes = [model.get_layer('classes16x16').output_shape[1:3]]
-    
+#     predictor_sizes = [model.get_layer('classes16x16').output_shape[1:3]]
+    predictor_sizes = np.array([[16,16]])
     ssd_input_encoder = SSDInputEncoder(img_height=img_height,
                                         img_width=img_width,
                                         n_classes=n_classes,
@@ -190,7 +181,7 @@ with tf.device('/gpu:0'):
     print("Number of images in the training dataset:\t{:>6}".format(train_dataset_size))
     print("Number of images in the validation dataset:\t{:>6}".format(val_dataset_size))
 
-    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_with_26landmark_without_box_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
+    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_26_pooling_regression_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
                                     monitor='val_loss',
                                     verbose=1,
                                     save_best_only=True,
@@ -200,8 +191,7 @@ with tf.device('/gpu:0'):
 
 
     log_dir = './logs/scalars/'+ 'our_data_'+datetime.now().strftime("%Y%m%d-%H%M%S")
-    file_writer = tf.summary.create_file_writer(log_dir + 'metrics')
-    # file_writer.set_as_default()
+       
     tensorboard_callback = TensorBoard(log_dir=log_dir)
     terminate_on_nan = TerminateOnNaN()
 

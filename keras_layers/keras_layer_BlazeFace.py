@@ -88,7 +88,7 @@ def double_blaze_block(x, filters_1=24, filters_2=96,
 
 
 def BlazeFace(input_shape):
-
+    
     inputs = keras.layers.Input(shape=input_shape)
 
     x_0 = keras.layers.Conv2D(
@@ -107,9 +107,9 @@ def BlazeFace(input_shape):
     x_6 = double_blaze_block(x_5, strides=2)
     x_7 = double_blaze_block(x_6)
     x_8 = double_blaze_block(x_7)
-    # x_9 = double_blaze_block(x_8, strides=2)
-    # x_10 = double_blaze_block(x_9)
-    # x_11 = double_blaze_block(x_10)
+    x_9 = double_blaze_block(x_8, strides=2)
+    x_10 = double_blaze_block(x_9)
+    x_11 = double_blaze_block(x_10)
 
-    model = keras.models.Model(inputs=inputs, outputs=x_8)
+    model = keras.models.Model(inputs=inputs, outputs=x_11)
     return model

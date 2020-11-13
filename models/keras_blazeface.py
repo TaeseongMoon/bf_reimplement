@@ -21,7 +21,7 @@ Reference: https://arxiv.org/pdf/1907.05047.pdf
 from __future__ import division
 import numpy as np
 from keras.models import Model
-from keras.layers import Input, Lambda, Conv2D, MaxPooling2D, BatchNormalization, ELU, ReLU, Reshape, Concatenate, Activation
+from keras.layers import Input, Lambda, Conv2D, MaxPooling2D,AveragePooling2D, BatchNormalization, ELU, ReLU, Reshape, Concatenate, Activation
 from keras import Sequential
 from keras.regularizers import l2
 import keras.backend as K
@@ -266,34 +266,41 @@ def blazeface(image_size,
     # Use BlazeFace to extract features
     # [(None, 16, 16, 96), (None, 8, 8, 96)]
     blaze_face = BlazeFace((img_height, img_width, img_channels))(x1)
-
+    landmark = Conv2D(filters=52, kernel_size=(3, 3), strides=(2, 2), padding='same')(blaze_face)
+    landmark_Pool = AveragePooling2D(pool_size=(4,4))(landmark)
+    anchor = Conv2D(filters=52, kernel_size=(3, 3), strides=(2, 2), padding='same')(blaze_face)
+    anchor_Pool = AveragePooling2D(pool_size=(4,4))(anchor)
+    
+    landmark_reshape = Reshape((-1, 52), name='landmark_reshape')(landmark_Pool)
+    
+    anchor_reshape = Reshape((-1, 52), name='anchor_reshape')(anchor_Pool)
+    
     # Build the convolutional predictor layers on top of conv layers 16x16 and 8x8 (return values from above BlazeFace CNN layers)
     # We build two predictor layers on top of each of these layers: One for class prediction (classification), one for box coordinate prediction (localization)
     # We precidt `n_classes` confidence values for each box, hence the `classes` predictors have depth `n_boxes * n_classes`
     # We predict 4 box coordinates for each box, hence the `boxes` predictors have depth `n_boxes * 4`
-    print(blaze_face)
     # Output shape of `classes`: `(batch, height, width, n_boxes * n_classes)`
-    classes16x16 = Conv2D(n_boxes[0] * n_classes, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='classes16x16')(blaze_face)    
+    # classes16x16 = Conv2D(n_boxes[0] * n_classes, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='classes16x16')(blaze_face)
     # classes8x8 = Conv2D(n_boxes[1] * n_classes, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='classes8x8')(blaze_face[1])
 
     # Output shape of `boxes`: `(batch, height, width, n_boxes * 4)`
     # boxes16x16 = Conv2D(n_boxes[0] * 4, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='boxes16x16')(blaze_face[0])
     # boxes8x8 = Conv2D(n_boxes[1] * 4, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='boxes8x8')(blaze_face[1])
 
-    landmarks16x16 = Conv2D(n_boxes[0] * 52, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='landmarks16x16')(blaze_face)
+    # landmarks16x16 = Conv2D(n_boxes[0] * 52, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='landmarks16x16')(blaze_face)
     # landmarks8x8 = Conv2D(n_boxes[1] * 10, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='landmarks8x8')(blaze_face[1])
     
     # Generate the anchor boxes
     # Output shape of `anchors`: `(batch, height, width, n_boxes, 8)`
-    anchors16x16 = AnchorBoxes(img_height, img_width, scales=scales[0], aspect_ratios=aspect_ratios[0], this_steps=steps[0], this_offsets=offsets[0],
-                           clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors16x16')(landmarks16x16)
+    # anchors16x16 = AnchorBoxes(img_height, img_width, scales=scales[0], aspect_ratios=aspect_ratios[0], this_steps=steps[0], this_offsets=offsets[0],
+                        #    clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors16x16')(landmarks16x16)
     # anchors8x8 = AnchorBoxes(img_height, img_width, scales=scales[1], aspect_ratios=aspect_ratios[1], this_steps=steps[1], this_offsets=offsets[1],
     #                        clip_boxes=clip_boxes, variances=variances, coords=coords, normalize_coords=normalize_coords, name='anchors8x8')(landmarks8x8)
 
 
     # Reshape the class predictions, yielding 3D tensors of shape `(batch, height * width * n_boxes, n_classes)`
     # We want the classes isolated in the last axis to perform softmax on them
-    classes16x16_reshaped = Reshape((-1, n_classes), name='classes16x16_reshape')(classes16x16)
+    # classes16x16_reshaped = Reshape((-1, n_classes), name='classes16x16_reshape')(classes16x16)
     # classes8x8_reshaped = Reshape((-1, n_classes), name='classes8x8_reshape')(classes8x8)
 
     # Reshape the box coordinate predictions, yielding 3D tensors of shape `(batch, height * width * n_boxes, 4)`
@@ -301,11 +308,11 @@ def blazeface(image_size,
     # boxes16x16_reshaped = Reshape((-1, 4), name='boxes16x16_reshape')(boxes16x16)
     # boxes8x8_reshaped = Reshape((-1, 4), name='boxes8x8_reshape')(boxes8x8)
 
-    landmarks16x16_reshaped = Reshape((-1, 52),name='landmarks16x16_reshape')(landmarks16x16)
+    # landmarks16x16_reshaped = Reshape((-1, 52),name='landmarks16x16_reshape')(landmarks16x16)
     # landmarks8x8_reshaped = Reshape((-1, 10),name='landmarks8x8_reshape')(landmarks8x8)
 
     # Reshape the anchor box tensors, yielding 3D tensors of shape `(batch, height * width * n_boxes, 8)`
-    anchors16x16_reshaped = Reshape((-1, 8), name='anchors16x16_reshape')(anchors16x16)
+    # anchors16x16_reshaped = Reshape((-1, 8), name='anchors16x16_reshape')(anchors16x16)
     # anchors8x8_reshaped = Reshape((-1, 8), name='anchors8x8_reshape')(anchors8x8)
 
     # Concatenate the predictions from the different layers and the assosciated anchor box tensors
@@ -323,12 +330,13 @@ def blazeface(image_size,
 
     # The box coordinate predictions will go into the loss function just the way they are,
     # but for the class predictions, we'll apply a softmax activation layer first
-    classes_softmax = Activation('softmax', name='classes_softmax')(classes16x16_reshaped)
-
+    # classes_softmax = Activation('softmax', name='classes_softmax')(classes16x16_reshaped)
 
     # Concatenate the class and box coordinate predictions and the anchors to one large predictions tensor
     # Output shape of `predictions`: (batch, n_boxes_total, n_classes + 4 + 8)
-    predictions = Concatenate(axis=2, name='predictions')([classes_softmax, landmarks16x16_reshaped ,anchors16x16_reshaped])
+    
+    
+    predictions = Concatenate(axis=2, name='predictions')([landmark_reshape, anchor_reshape])
 
     if mode == 'training':
         model = Model(inputs=x, outputs=predictions)
@@ -359,7 +367,7 @@ def blazeface(image_size,
 
     if return_predictor_sizes:
         # The spatial dimensions are the same for the `classes` and `boxes` predictor layers.
-        predictor_sizes = np.array([classes16x16.shape[1:3]])
+        predictor_sizes = np.array([blaze_face.shape[1:3]])
         return model, predictor_sizes
     else:
         return model
