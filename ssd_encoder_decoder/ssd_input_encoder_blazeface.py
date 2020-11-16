@@ -249,9 +249,9 @@ class SSDInputEncoder:
             # y_encoded[i, bipartite_matches, :] = labels_one_hot
             
             for _ in range(y_encoded.shape[1]):
-                y_encoded[i, :53] = labels[:, 1:]
-            y_encoded[:, 53:] = np.less(y_encoded[:, 53:], 0).astype(int)
-            
+                y_encoded[i,:, :52] = labels[:, 1:]
+            y_encoded[:,:, 52:] = np.greater_equal(y_encoded[:, :,:52], 0).astype(int)
+
             # y_encoded[i, 135, :-8] = landmark_one_hot
             # Set the columns of the matched anchor boxes to zero to indicate that they were matched.
             # similarities[:, bipartite_matches] = 0
@@ -283,9 +283,9 @@ class SSDInputEncoder:
         ###################################################s##########`#####################
         # Convert box coordinates to anchor box offsets.
         ##################################################################################
-        
+
         if self.coords == 'centroids':
-            y_encoded[...,:53] -= anchor_tensor[...,:] # cx(gt) - cx(anchor), cy(gt) - cy(anchor)
+            y_encoded[...,:52] -= anchor_tensor[...,:] # cx(gt) - cx(anchor), cy(gt) - cy(anchor)
             # y_encoded[...,2:54] /= np.tile(y_encoded[...,[-6, -5]], 26) * np.tile(y_encoded[...,[-4,-3]], 26) # (cx(gt) - cx(anchor)) / w(anchor) / cx_variance, (cy(gt) - cy(anchor)) / h(anchor) / cy_variance
         
         if diagnostics:
@@ -390,9 +390,8 @@ class SSDInputEncoder:
             return boxes_tensor
 
     def generate_encoding_template(self, batch_size, diagnostics=False):
-        import pdb
-        pdb.set_trace()
-        anchor_tensor = np.tile(self.anchor, (batch_size, 1)).astype(np.float)
+        
+        anchor_tensor = np.tile(self.anchor, (batch_size, 1, 1)).astype(np.float)
         
         # anchor_tensor = np.divide(anchor_tensor, normalize_tensor) # Normalize ymin and ymax relative to the image height
         anchor_tensor[:,0:51:2] /= self.img_height
@@ -404,8 +403,9 @@ class SSDInputEncoder:
         # boxes_tensor = np.concatenate(boxes_batch, axis=1)
         # classes_tensor = np.zeros((batch_size, boxes_tensor.shape[1], self.n_classes))
         # landmark_tensor = np.concatenate(ld_batch, axis=1)
+        
         landmark_tensor = np.zeros_like(anchor_tensor)
-        landmark_tensor = np.concatenate((landmark_tensor, landmark_tensor), axis=1)
+        landmark_tensor = np.concatenate((landmark_tensor, landmark_tensor), axis=2)
         # variances_tensor += self.variances # Long live broadcasting
         
         # y_encoding_template = np.concatenate((anchor_tensor, anchor_tensor, variances_tensor), axis=2)

@@ -99,18 +99,6 @@ class SSDLoss:
         log_loss = -tf.reduce_sum(input_tensor=y_true * tf.math.log(y_pred), axis=-1)
         return log_loss
 
-    def make_mask(self, y_encoded):
-        # batch_size = tf.shape(input=y_encoded).as_list()[0]
-        # batch_tensor = tf.zeros(32)
-        import pdb
-        pdb.set_trace()
-        y_encoded_copy = tf.identity(y_encoded)
-        mask_landm = tf.equal(y_encoded_copy[..., 53:], 0)
-        # mask_landm = tf.logical_not(mask_landm)
-
-        return mask_landm
-
-
     def compute_loss(self, y_true, y_pred):
 
         '''
@@ -147,13 +135,11 @@ class SSDLoss:
         n_boxes = tf.shape(input=y_pred)[1] # Output dtype: tf.int32, note that `n_boxes` in this context denotes the total number of boxes per image, not the number of boxes per cell.
         
         # 1: Compute the losses for class and box predictions for every box.
-
-        # landmark_mask = self.make_mask(y_true)
         
         # classification_loss = tf.cast(self.log_loss(y_true[:,:,:-60], y_pred[:,:,:-60]), tf.float32) # Output shape: (batch_size, n_boxes)
         # localization_loss = tf.cast(self.smooth_L1_loss(y_true[:,:,-22:-18], y_pred[:,:,-22:-18]), tf.float32) # Output shape: (batch_size, n_boxes)
-        landmark_loss = tf.cast(self.smooth_L1_loss(tf.boolean_mask(y_true[..., :53], tf.equal(y_true[...,53:], 0)),
-                                                    tf.boolean_mask(y_pred[..., :53], tf.equal(y_true[...,53:], 0))), tf.float32)
+        landmark_loss = tf.cast(self.smooth_L1_loss(tf.multiply(y_true[..., :52], y_true[...,52:]),
+                                                    tf.multiply(y_pred[..., :52], y_true[...,52:])), tf.float32)
         # landmark_loss = tf.cast(self.smooth_L1_loss(y_true[...,:53],y_pred[...,:53]), tf.float32)
         # 2: Compute the classification losses for the positive and negative targets.
 
@@ -228,6 +214,6 @@ class SSDLoss:
         # because the relevant criterion to average our loss over is the number of positive boxes in the batch
         # (by which we're dividing in the line above), not the batch size. So in order to revert Keras' averaging
         # over the batch size, we'll have to multiply by it.
-        # total_loss = land_loss * tf.cast(batch_size, tf.float32)
+        total_loss = land_loss * tf.cast(batch_size, tf.float32)
 
-        return land_loss
+        return total_loss

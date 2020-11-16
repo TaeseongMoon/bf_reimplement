@@ -100,7 +100,7 @@ class DecodeDetections(Layer):
         self.tf_img_height = tf.constant(self.img_height, dtype=tf.float32, name='img_height')
         self.tf_img_width = tf.constant(self.img_width, dtype=tf.float32, name='img_width')
         self.tf_nms_max_output_size = tf.constant(self.nms_max_output_size, name='nms_max_output_size')
-
+        self.anchor = [ float(x) for x in open('anchors.txt').readline().split(',') if x != '']
         super(DecodeDetections, self).__init__(**kwargs)
 
     def build(self, input_shape):
@@ -116,161 +116,39 @@ class DecodeDetections(Layer):
             `[class_id, confidence, xmin, ymin, xmax, ymax]`.
         '''
 
-        #####################################################################################
-        # 1. Convert the box coordinates from predicted anchor box offsets to predicted
-        #    absolute coordinates
-        #####################################################################################
-        
-        # Convert anchor box offsets to image offsets.
-        # cx = y_pred[...,-22] * y_pred[...,-4] * y_pred[...,-6] + y_pred[...,-8] # cx = cx_pred * cx_variance * w_anchor + cx_anchor
-        # cy = y_pred[...,-21] * y_pred[...,-3] * y_pred[...,-5] + y_pred[...,-7] # cy = cy_pred * cy_variance * h_anchor + cy_anchor
-        # w = tf.exp(y_pred[...,-20] * y_pred[...,-2]) * y_pred[...,-6] # w = exp(w_pred * variance_w) * w_anchor
-        # h = tf.exp(y_pred[...,-19] * y_pred[...,-1]) * y_pred[...,-5] # h = exp(h_pred * variance_h) * h_anchor
-        
-        # Convert 'centroids' to 'corners'.
-        # xmin = cx - 0.5 * w
-        # ymin = cy - 0.5 * h
-        # xmax = cx + 0.5 * w
-        # ymax = cy + 0.5 * h
-        
-        # kp1_x = y_pred[...,-18] * y_pred[...,-4] * y_pred[...,-6] + y_pred[...,-8]
-        # kp1_y = y_pred[...,-17] * y_pred[...,-3] * y_pred[...,-5] + y_pred[...,-7]
-        # kp2_x = y_pred[...,-16] * y_pred[...,-4] * y_pred[...,-6] + y_pred[...,-8]
-        # kp2_y = y_pred[...,-15] * y_pred[...,-3] * y_pred[...,-5] + y_pred[...,-7]
-        # kp3_x = y_pred[...,-14] * y_pred[...,-4] * y_pred[...,-6] + y_pred[...,-8]
-        # kp3_y = y_pred[...,-13] * y_pred[...,-3] * y_pred[...,-5] + y_pred[...,-7]
-        # kp4_x = y_pred[...,-12] * y_pred[...,-4] * y_pred[...,-6] + y_pred[...,-8]
-        # kp4_y = y_pred[...,-11] * y_pred[...,-3] * y_pred[...,-5] + y_pred[...,-7]
-        # kp5_x = y_pred[...,-10] * y_pred[...,-4] * y_pred[...,-6] + y_pred[...,-8]
-        # kp5_y = y_pred[...,-9] * y_pred[...,-3] * y_pred[...,-5] + y_pred[...,-7]
-        # [ kp1_x, kp1_y, kp2_x, kp2_y, kp3_x, kp3_y, kp4_x, kp4_y, kp5_x, kp5_y] = y_pred[..., 2:12] * y_pred[..., [-4, -3, -4, -3, -4, -3, -4, -3, -4, -3]] * y_pred[..., [-6, -5, -6, -5, -6, -5, -6, -5, -6, -5]] + y_pred[..., [-8, -7, -8, -7, -8, -7, -8, -7, -8, -7]]
-        # [ kp6_x, kp6_y, kp7_x, kp7_y, kp8_x, kp8_y, kp9_x, kp9_y, kp10_x, kp10_y] = y_pred[..., 12:22] * y_pred[..., [-4, -3, -4, -3, -4, -3, -4, -3, -4, -3]] * y_pred[..., [-6, -5, -6, -5, -6, -5, -6, -5, -6, -5]] + y_pred[..., [-8, -7, -8, -7, -8, -7, -8, -7, -8, -7]]
-        # [ kp11_x, kp11_y, kp12_x, kp12_y, kp13_x, kp13_y, kp14_x, kp14_y, kp15_x, kp15_y] = y_pred[..., 22:32] * y_pred[..., [-4, -3, -4, -3, -4, -3, -4, -3, -4, -3]] * y_pred[..., [-6, -5, -6, -5, -6, -5, -6, -5, -6, -5]] + y_pred[..., [-8, -7, -8, -7, -8, -7, -8, -7, -8, -7]]
-        # [ kp16_x, kp16_y, kp17_x, kp17_y, kp18_x, kp18_y, kp19_x, kp19_y, kp20_x, kp20_y] = y_pred[..., 32:42] * y_pred[..., [-4, -3, -4, -3, -4, -3, -4, -3, -4, -3]] * y_pred[..., [-6, -5, -6, -5, -6, -5, -6, -5, -6, -5]] + y_pred[..., [-8, -7, -8, -7, -8, -7, -8, -7, -8, -7]]
-        # [ kp21_x, kp21_y, kp22_x, kp22_y, kp23_x, kp23_y, kp24_x, kp24_y, kp25_x, kp25_y, kp26_x, kp26_y] = y_pred[..., 42:54] * y_pred[..., [-4, -3, -4, -3, -4, -3, -4, -3, -4, -3]] * y_pred[..., [-6, -5, -6, -5, -6, -5, -6, -5, -6, -5]] + y_pred[..., [-8, -7, -8, -7, -8, -7, -8, -7, -8, -7]]
-        repeat = tf.constant([1, 1, 26])
-        decoded_output = tf.multiply(y_pred[:,:,2:54], tf.multiply(tf.tile(y_pred[:,:,-6:-4], repeat), tf.tile(y_pred[:,:,-4:-2], repeat)))
-        decoded_output = tf.add(decoded_output, tf.tile(y_pred[:,:,-8:-6], repeat))
-        
+        # batch_size = y_pred.get_shape().as_list()[0]
+        # anchor = tf.zero_like(y_pred[...,:52])
+        # anchor = tf.constant([[self.anchor]])
+        # anchor_tensor = tf.tile(anchor, tf.constant([batch_size, 1, 1]))
+        # repeat = tf.constant([1, 1, 26])
+        # decoded_output = tf.multiply(y_pred[:,:,2:54], tf.multiply(tf.tile(y_pred[:,:,-6:-4], repeat), tf.tile(y_pred[:,:,-4:-2], repeat)))
+        # decoded_output = tf.add(decoded_output, tf.tile(y_pred[:,:,-8:-6], repeat))
+
+        # decoded_output = tf.subtract(y_pred[...,:52], anchor_tensor)
         # If the model predicts box coordinates relative to the image dimensions and they are supposed
         # to be converted back to absolute coordinates, do that.
         def normalized_coords():
-            kp1_x1 = tf.expand_dims(decoded_output[..., 0] * self.tf_img_width, axis=-1)
-            kp1_y1 = tf.expand_dims(decoded_output[..., 1] * self.tf_img_height, axis=-1)
-            kp2_x1 = tf.expand_dims(decoded_output[..., 2] * self.tf_img_width, axis=-1)
-            kp2_y1 = tf.expand_dims(decoded_output[..., 3] * self.tf_img_height, axis=-1)
-            kp3_x1 = tf.expand_dims(decoded_output[..., 4] * self.tf_img_width, axis=-1)
-            kp3_y1 = tf.expand_dims(decoded_output[..., 5] * self.tf_img_height, axis=-1)
-            kp4_x1 = tf.expand_dims(decoded_output[..., 6] * self.tf_img_width, axis=-1)
-            kp4_y1 = tf.expand_dims(decoded_output[..., 7] * self.tf_img_height, axis=-1)
-            kp5_x1 = tf.expand_dims(decoded_output[..., 8] * self.tf_img_width, axis=-1)
-            kp5_y1 = tf.expand_dims(decoded_output[..., 9] * self.tf_img_height, axis=-1)
-            kp6_x1 = tf.expand_dims(decoded_output[..., 10] * self.tf_img_width, axis=-1)
-            kp6_y1 = tf.expand_dims(decoded_output[..., 11] * self.tf_img_height, axis=-1)
-            kp7_x1 = tf.expand_dims(decoded_output[..., 12] * self.tf_img_width, axis=-1)
-            kp7_y1 = tf.expand_dims(decoded_output[..., 13] * self.tf_img_height, axis=-1)
-            kp8_x1 = tf.expand_dims(decoded_output[..., 14] * self.tf_img_width, axis=-1)
-            kp8_y1 = tf.expand_dims(decoded_output[..., 15] * self.tf_img_height, axis=-1)
-            kp9_x1 = tf.expand_dims(decoded_output[..., 16] * self.tf_img_width, axis=-1)
-            kp9_y1 = tf.expand_dims(decoded_output[..., 17] * self.tf_img_height, axis=-1)
-            kp10_x1 = tf.expand_dims(decoded_output[..., 18]  * self.tf_img_width, axis=-1)
-            kp10_y1 = tf.expand_dims(decoded_output[..., 19]  * self.tf_img_height, axis=-1)
-            kp11_x1 = tf.expand_dims(decoded_output[..., 20]  * self.tf_img_width, axis=-1)
-            kp11_y1 = tf.expand_dims(decoded_output[..., 21]  * self.tf_img_height, axis=-1)
-            kp12_x1 = tf.expand_dims(decoded_output[..., 22]  * self.tf_img_width, axis=-1)
-            kp12_y1 = tf.expand_dims(decoded_output[..., 23]  * self.tf_img_height, axis=-1)
-            kp13_x1 = tf.expand_dims(decoded_output[..., 24]  * self.tf_img_width, axis=-1)
-            kp13_y1 = tf.expand_dims(decoded_output[..., 25]  * self.tf_img_height, axis=-1)
-            kp14_x1 = tf.expand_dims(decoded_output[..., 26]  * self.tf_img_width, axis=-1)
-            kp14_y1 = tf.expand_dims(decoded_output[..., 27]  * self.tf_img_height, axis=-1)
-            kp15_x1 = tf.expand_dims(decoded_output[..., 28]  * self.tf_img_width, axis=-1)
-            kp15_y1 = tf.expand_dims(decoded_output[..., 29]  * self.tf_img_height, axis=-1)
-            kp16_x1 = tf.expand_dims(decoded_output[..., 30]  * self.tf_img_width, axis=-1)
-            kp16_y1 = tf.expand_dims(decoded_output[..., 31]  * self.tf_img_height, axis=-1)
-            kp17_x1 = tf.expand_dims(decoded_output[..., 32]  * self.tf_img_width, axis=-1)
-            kp17_y1 = tf.expand_dims(decoded_output[..., 33]  * self.tf_img_height, axis=-1)
-            kp18_x1 = tf.expand_dims(decoded_output[..., 34]  * self.tf_img_width, axis=-1)
-            kp18_y1 = tf.expand_dims(decoded_output[..., 35]  * self.tf_img_height, axis=-1)
-            kp19_x1 = tf.expand_dims(decoded_output[..., 36]  * self.tf_img_width, axis=-1)
-            kp19_y1 = tf.expand_dims(decoded_output[..., 37]  * self.tf_img_height, axis=-1)
-            kp20_x1 = tf.expand_dims(decoded_output[..., 38]  * self.tf_img_width, axis=-1)
-            kp20_y1 = tf.expand_dims(decoded_output[..., 39]  * self.tf_img_height, axis=-1)
-            kp21_x1 = tf.expand_dims(decoded_output[..., 40]  * self.tf_img_width, axis=-1)
-            kp21_y1 = tf.expand_dims(decoded_output[..., 41]  * self.tf_img_height, axis=-1)
-            kp22_x1 = tf.expand_dims(decoded_output[..., 42]  * self.tf_img_width, axis=-1)
-            kp22_y1 = tf.expand_dims(decoded_output[..., 43]  * self.tf_img_height, axis=-1)
-            kp23_x1 = tf.expand_dims(decoded_output[..., 44]  * self.tf_img_width, axis=-1)
-            kp23_y1 = tf.expand_dims(decoded_output[..., 45]  * self.tf_img_height, axis=-1)
-            kp24_x1 = tf.expand_dims(decoded_output[..., 46]  * self.tf_img_width, axis=-1)
-            kp24_y1 = tf.expand_dims(decoded_output[..., 47]  * self.tf_img_height, axis=-1)
-            kp25_x1 = tf.expand_dims(decoded_output[..., 48]  * self.tf_img_width, axis=-1)
-            kp25_y1 = tf.expand_dims(decoded_output[..., 49]  * self.tf_img_height, axis=-1)
-            kp26_x1 = tf.expand_dims(decoded_output[..., 50]  * self.tf_img_width, axis=-1)
-            kp26_y1 = tf.expand_dims(decoded_output[..., 51]  * self.tf_img_height, axis=-1)
-            return  kp1_x1, kp1_y1, kp2_x1, kp2_y1, kp3_x1, kp3_y1, kp4_x1, kp4_y1, kp5_x1, kp5_y1, kp6_x1, kp6_y1, kp7_x1, kp7_y1, kp8_x1, kp8_y1, kp9_x1, kp9_y1, kp10_x1, kp10_y1,kp11_x1, kp11_y1, kp12_x1, kp12_y1, kp13_x1, kp13_y1, kp14_x1, kp14_y1, kp15_x1, kp15_y1,kp16_x1, kp16_y1, kp17_x1, kp17_y1, kp18_x1, kp18_y1, kp19_x1, kp19_y1, kp20_x1, kp20_y1, kp21_x1, kp21_y1, kp22_x1, kp22_y1, kp23_x1, kp23_y1, kp24_x1, kp24_y1, kp25_x1, kp25_y1,kp26_x1, kp26_y1
+            key_points = []
+            for i in range(0,51,2):
+                key_points.append(tf.expand_dims(y_pred[..., i] *self.tf_img_width, axis=-1))
+                key_points.append(tf.expand_dims(y_pred[..., i+1] * self.tf_img_height, axis=-1))
+            
+            return  key_points
         def non_normalized_coords():
-            kp1_x1 = tf.expand_dims(decoded_output[..., 0], axis=-1)
-            kp1_y1 = tf.expand_dims(decoded_output[..., 1], axis=-1)
-            kp2_x1 = tf.expand_dims(decoded_output[..., 2], axis=-1)
-            kp2_y1 = tf.expand_dims(decoded_output[..., 3], axis=-1)
-            kp3_x1 = tf.expand_dims(decoded_output[..., 4], axis=-1)
-            kp3_y1 = tf.expand_dims(decoded_output[..., 5], axis=-1)
-            kp4_x1 = tf.expand_dims(decoded_output[..., 6], axis=-1)
-            kp4_y1 = tf.expand_dims(decoded_output[..., 7], axis=-1)
-            kp5_x1 = tf.expand_dims(decoded_output[..., 8], axis=-1)
-            kp5_y1 = tf.expand_dims(decoded_output[..., 9], axis=-1)
-            kp6_x1 = tf.expand_dims(decoded_output[..., 10], axis=-1)
-            kp6_y1 = tf.expand_dims(decoded_output[..., 11], axis=-1)
-            kp7_x1 = tf.expand_dims(decoded_output[..., 12], axis=-1)
-            kp7_y1 = tf.expand_dims(decoded_output[..., 13], axis=-1)
-            kp8_x1 = tf.expand_dims(decoded_output[..., 14], axis=-1)
-            kp8_y1 = tf.expand_dims(decoded_output[..., 15], axis=-1)
-            kp9_x1 = tf.expand_dims(decoded_output[..., 16], axis=-1)
-            kp9_y1 = tf.expand_dims(decoded_output[..., 17], axis=-1)
-            kp10_x1 = tf.expand_dims(decoded_output[..., 18], axis=-1)
-            kp10_y1 = tf.expand_dims(decoded_output[..., 19], axis=-1)
-            kp11_x1 = tf.expand_dims(decoded_output[..., 20], axis=-1)
-            kp11_y1 = tf.expand_dims(decoded_output[..., 21], axis=-1)
-            kp12_x1 = tf.expand_dims(decoded_output[..., 22], axis=-1)
-            kp12_y1 = tf.expand_dims(decoded_output[..., 23], axis=-1)
-            kp13_x1 = tf.expand_dims(decoded_output[..., 24], axis=-1)
-            kp13_y1 = tf.expand_dims(decoded_output[..., 25], axis=-1)
-            kp14_x1 = tf.expand_dims(decoded_output[..., 26], axis=-1)
-            kp14_y1 = tf.expand_dims(decoded_output[..., 27], axis=-1)
-            kp15_x1 = tf.expand_dims(decoded_output[..., 28], axis=-1)
-            kp15_y1 = tf.expand_dims(decoded_output[..., 29], axis=-1)
-            kp16_x1 = tf.expand_dims(decoded_output[..., 30], axis=-1)
-            kp16_y1 = tf.expand_dims(decoded_output[..., 31], axis=-1)
-            kp17_x1 = tf.expand_dims(decoded_output[..., 32], axis=-1)
-            kp17_y1 = tf.expand_dims(decoded_output[..., 33], axis=-1)
-            kp18_x1 = tf.expand_dims(decoded_output[..., 34], axis=-1)
-            kp18_y1 = tf.expand_dims(decoded_output[..., 35], axis=-1)
-            kp19_x1 = tf.expand_dims(decoded_output[..., 36], axis=-1)
-            kp19_y1 = tf.expand_dims(decoded_output[..., 37], axis=-1)
-            kp20_x1 = tf.expand_dims(decoded_output[..., 38], axis=-1)
-            kp20_y1 = tf.expand_dims(decoded_output[..., 39], axis=-1)
-            kp21_x1 = tf.expand_dims(decoded_output[..., 40], axis=-1)
-            kp21_y1 = tf.expand_dims(decoded_output[..., 41], axis=-1)
-            kp22_x1 = tf.expand_dims(decoded_output[..., 42], axis=-1)
-            kp22_y1 = tf.expand_dims(decoded_output[..., 43], axis=-1)
-            kp23_x1 = tf.expand_dims(decoded_output[..., 44], axis=-1)
-            kp23_y1 = tf.expand_dims(decoded_output[..., 45], axis=-1)
-            kp24_x1 = tf.expand_dims(decoded_output[..., 46], axis=-1)
-            kp24_y1 = tf.expand_dims(decoded_output[..., 47], axis=-1)
-            kp25_x1 = tf.expand_dims(decoded_output[..., 48], axis=-1)
-            kp25_y1 = tf.expand_dims(decoded_output[..., 49], axis=-1)
-            kp26_x1 = tf.expand_dims(decoded_output[..., 50], axis=-1)
-            kp26_y1 = tf.expand_dims(decoded_output[..., 51], axis=-1)
-            return kp1_x1, kp1_y1, kp2_x1, kp2_y1, kp3_x1, kp3_y1, kp4_x1, kp4_y1, kp5_x1, kp5_y1, kp6_x1, kp6_y1, kp7_x1, kp7_y1, kp8_x1, kp8_y1, kp9_x1, kp9_y1, kp10_x1, kp10_y1,kp11_x1, kp11_y1, kp12_x1, kp12_y1, kp13_x1, kp13_y1, kp14_x1, kp14_y1, kp15_x1, kp15_y1,kp16_x1, kp16_y1, kp17_x1, kp17_y1, kp18_x1, kp18_y1, kp19_x1, kp19_y1, kp20_x1, kp20_y1, kp21_x1, kp21_y1, kp22_x1, kp22_y1, kp23_x1, kp23_y1, kp24_x1, kp24_y1, kp25_x1, kp25_y1,kp26_x1, kp26_y1
+            key_points = []
+            for i in range(0,51,2):
+                key_points.append(tf.expand_dims(y_pred[..., i], axis=-1))
+                key_points.append(tf.expand_dims(y_pred[..., i+1], axis=-1))
+            
+            return key_points
 
-        kp1_x, kp1_y,kp2_x, kp2_y,kp3_x, kp3_y,kp4_x, kp4_y,kp5_x, kp5_y,kp6_x, kp6_y,kp7_x, kp7_y,kp8_x, kp8_y,kp9_x, kp9_y,kp10_x, kp10_y,kp11_x, kp11_y,kp12_x, kp12_y,kp13_x, kp13_y,kp14_x, kp14_y,kp15_x, kp15_y,kp16_x, kp16_y,kp17_x, kp17_y,kp18_x, kp18_y,kp19_x, kp19_y,kp20_x, kp20_y,kp21_x, kp21_y,kp22_x, kp22_y,kp23_x, kp23_y,kp24_x, kp24_y,kp25_x, kp25_y, kp26_x, kp26_y = tf.cond(pred=self.tf_normalize_coords, true_fn=normalized_coords, false_fn=non_normalized_coords)
+        key_points= tf.cond(pred=self.tf_normalize_coords, true_fn=normalized_coords, false_fn=non_normalized_coords)
+
         # out = tf.cond(pred=self.tf_normalize_coords, true_fn=normalized_coords, false_fn=non_normalized_coords)
-
-
-    
-
+ 
         # Concatenate the one-hot class confidences and the converted box coordinates to form the decoded predictions tensor.
-        y_pred = tf.concat(values=[y_pred[...,:2], kp1_x, kp1_y,kp2_x, kp2_y,kp3_x, kp3_y,kp4_x, kp4_y,kp5_x, kp5_y,kp6_x, kp6_y,kp7_x, kp7_y,kp8_x, kp8_y,kp9_x, kp9_y,kp10_x, kp10_y,kp11_x, kp11_y,kp12_x, kp12_y,kp13_x, kp13_y,kp14_x, kp14_y,kp15_x, kp15_y,kp16_x, kp16_y,kp17_x, kp17_y,kp18_x, kp18_y,kp19_x, kp19_y,kp20_x, kp20_y,kp21_x, kp21_y,kp22_x, kp22_y,kp23_x, kp23_y,kp24_x, kp24_y,kp25_x, kp25_y, kp26_x, kp26_y], axis=-1)
+        
+        y_pred = tf.concat(values=key_points, axis=-1)
         
         #####################################################################################
         # 2. Perform confidence thresholding, per-class non-maximum suppression, and
