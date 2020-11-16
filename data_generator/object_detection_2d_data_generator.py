@@ -88,6 +88,7 @@ class DataGenerator:
                  labels=None,
                  image_ids=None,
                  eval_neutral=None,
+                 fix_image_ratio=True,
                  labels_output_format=('class_id','kp1_x','kp1_y','kp2_x','kp2_y','kp3_x','kp3_y','kp4_x','kp4_y','kp5_x','kp5_y',
                                            'kp6_x','kp6_y','kp7_x','kp7_y','kp8_x','kp8_y','kp9_x','kp9_y','kp10_x','kp10_y','kp11_x','kp11_y','kp12_x','kp12_y','kp13_x',
                                            'kp13_y','kp14_x','kp14_y','kp15_x','kp15_y','kp16_x','kp16_y','kp17_x','kp17_y','kp18_x','kp18_y','kp19_x','kp19_y','kp20_x','kp20_y','kp21_x',
@@ -198,7 +199,7 @@ class DataGenerator:
         self.dataset_size = 0 # As long as we haven't loaded anything yet, the dataset size is zero.
         self.load_images_into_memory = load_images_into_memory
         self.images = None # The only way that this list will not stay `None` is if `load_images_into_memory == True`.
-
+        self.fix_image_ratio=fix_image_ratio
         # `self.filenames` is a list containing all file names of the image samples (full paths).
         # Note that it does not contain the actual image files themselves. This list is one of the outputs of the parser methods.
         # In case you are loading an HDF5 dataset, this list will be `None`.
@@ -324,6 +325,7 @@ class DataGenerator:
                   include_classes='all',
                   random_sample=False,
                   ret=False,
+                  fix_image_ratio=True,
                   verbose=True):
         '''
         Arguments:
@@ -404,10 +406,22 @@ class DataGenerator:
         add_to_dataset = False
         
         for i, box in enumerate(data):
-
             if box[0] == current_file: # If this box (i.e. this line of the CSV file) belongs to the current image file
-                current_labels.append(box[5:])
-                current_bbox.append(box[1:5])
+                if self.fix_image_ratio:
+
+                    w = int(box[3]) - int(box[1])
+                    h = int(box[4]) - int(box[2])
+                    cx = int(box[1]) + w//2
+                    cy = int(box[2]) + h//2
+                    x_diff = (cx-64) - int(box[1])
+                    y_diff = (cy-64) - int(box[2])
+                    current_bbox.append([cx-64,cy-64,cx+64,cy+64])
+                    new_label=[[str(int(box[i]) - x_diff), str(int(box[i+1]) - y_diff)] for i in range(6,len(box),2)]
+                    new_label = [str(box[5])]+[y for x in new_label for y in x]
+                    current_labels.append(new_label)
+                else:
+                    current_labels.append(box[5:])
+                    current_bbox.append(box[1:5])
                 if i == len(data)-1: # If this is the last line of the CSV file
                     if random_sample: # In case we're not using the full dataset, but a random sample of it.
                         p = np.random.uniform(0,1)
@@ -436,10 +450,23 @@ class DataGenerator:
                     self.bboxes[os.path.join(self.images_dir, current_file)] = current_bbox
                 current_labels = [] # Reset the labels list because this is a new file.
                 current_bbox = []
+                if self.fix_image_ratio:
+                    w = int(box[3]) - int(box[1])
+                    h = int(box[4]) - int(box[2])
+                    cx = int(box[1]) + w//2
+                    cy = int(box[2]) + h//2
+                    x_diff = (cx-64) - int(box[1])
+                    y_diff = (cy-64) - int(box[2])
+                    current_bbox.append([cx-64,cy-64,cx+64,cy+64])
+                    new_label=[[str(int(box[i]) - x_diff), str(int(box[i+1]) - y_diff)] for i in range(6,len(box),2)]
+                    new_label = [str(box[5])]+[y for x in new_label for y in x]
+                    current_labels.append(new_label)
+                else:
+                    current_labels.append(box[5:])
+                    current_bbox.append(box[1:5])
+
                 current_file = box[0]
                 current_image_id = box[0].split('.')[0]
-                current_labels.append(box[5:])
-                current_bbox.append(box[1:5])
                 if i == len(data)-1: # If this is the last line of the CSV file
                     if random_sample: # In case we're not using the full dataset, but a random sample of it.
                         p = np.random.uniform(0,1)
@@ -654,9 +681,9 @@ class DataGenerator:
                     batch_filenames = None
             else:
                 batch_filenames = self.filenames[current:current+batch_size]
-
                 for filename in batch_filenames:
                     with Image.open(filename) as image:
+                        
                         bbox = self.bboxes[filename]
                         bbox = tuple(map(int,bbox[0]))
                         image = image.crop(bbox)

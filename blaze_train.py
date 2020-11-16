@@ -90,8 +90,8 @@ with tf.device('/gpu:0'):
 
     #train_dataset = DataGenerator(load_images_into_memory=True, hdf5_dataset_path='wider_train_new.h5')
     #val_dataset = DataGenerator(load_images_into_memory=True, hdf5_dataset_path='wider_val_new_v2.h5')
-    train_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None)
-    val_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None)
+    train_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None, fix_image_ratio=True)
+    val_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None, fix_image_ratio=True)
     # 2: Parse the image and label lists for the training and validation datasets.
 
     # Ground truth
@@ -197,7 +197,7 @@ with tf.device('/gpu:0'):
 
     callbacks = [model_checkpoint,
                 # csv_logger,
-                tensorboard_callback,
+                # tensorboard_callback,
                 terminate_on_nan]
 
     initial_epoch   = 0

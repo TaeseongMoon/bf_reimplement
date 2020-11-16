@@ -62,7 +62,7 @@ class Resize:
         self.box_filter = box_filter
         self.labels_format = labels_format
 
-    def __call__(self, image, labels=None, return_inverter=False):
+    def __call__(self, image, labels=None, return_inverter=False, fix_image_ratio=True):
 
         img_height, img_width = image.shape[:2]
 
@@ -119,38 +119,41 @@ class Resize:
         kp26_x = self.labels_format['kp26_x']
         kp26_y = self.labels_format['kp26_y']
 
-        
-        image = cv2.resize(image,
-                           dsize=(self.out_width, self.out_height),
-                           interpolation=self.interpolation_mode)
-
-        if return_inverter:
-            def inverter(labels):
-                labels = np.copy(labels)
-                labels[:, [ymin+1, ymax+1, kp1_y+1, kp2_y+1, kp3_y+1, kp4_y+1, kp5_y+1]] = np.round(labels[:, [ymin+1, ymax+1, kp1_y+1, kp2_y+1, kp3_y+1, kp4_y+1, kp5_y+1]] * (img_height / self.out_height), decimals=0)
-                labels[:, [xmin+1, xmax+1, kp1_x+1, kp2_x+1, kp3_x+1, kp4_x+1, kp5_x+1]] = np.round(labels[:, [xmin+1, xmax+1, kp1_x+1, kp2_x+1, kp3_x+1, kp4_x+1, kp5_x+1]] * (img_width / self.out_width), decimals=0)
-                return labels
-
-        if labels is None:
-            if return_inverter:
-                return image, inverter
-            else:
-                return image
+        if fix_image_ratio:
+            return image, labels
         else:
-            labels = np.copy(labels)
-            labels[:, [kp1_y,kp2_y,kp3_y,kp4_y,kp5_y,kp6_y,kp7_y,kp8_y,kp9_y,kp10_y,kp11_y,kp12_y,kp13_y,kp14_y,kp15_y,kp16_y,kp17_y,kp18_y,kp19_y,kp20_y, kp21_y,kp22_y,kp23_y,kp24_y,kp25_y,kp26_y]] = np.round(labels[:, [kp1_y,kp2_y,kp3_y,kp4_y,kp5_y,kp6_y,kp7_y,kp8_y,kp9_y,kp10_y,kp11_y,kp12_y,kp13_y,kp14_y,kp15_y,kp16_y,kp17_y,kp18_y,kp19_y,kp20_y, kp21_y,kp22_y,kp23_y,kp24_y,kp25_y,kp26_y]] * (self.out_height / img_height), decimals=0)
-            labels[:, [kp1_x,kp2_x,kp3_x,kp4_x,kp5_x,kp6_x,kp7_x,kp8_x,kp9_x,kp10_x,kp11_x,kp12_x,kp13_x,kp14_x,kp15_x,kp16_x,kp17_x,kp18_x,kp19_x,kp20_x, kp21_x,kp22_x,kp23_x,kp24_x,kp25_x,kp26_x]] = np.round(labels[:, [kp1_x,kp2_x,kp3_x,kp4_x,kp5_x,kp6_x,kp7_x,kp8_x,kp9_x,kp10_x,kp11_x,kp12_x,kp13_x,kp14_x,kp15_x,kp16_x,kp17_x,kp18_x,kp19_x,kp20_x, kp21_x,kp22_x,kp23_x,kp24_x,kp25_x,kp26_x]] * (self.out_width / img_width), decimals=0)
-
-            # if not (self.box_filter is None):
-            #     self.box_filter.labels_format = self.labels_format
-            #     labels = self.box_filter(labels=labels,
-            #                              image_height=self.out_height,
-            #                              image_width=self.out_width)
+            
+            image = cv2.resize(image,
+                            dsize=(self.out_width, self.out_height),
+                            interpolation=self.interpolation_mode)
 
             if return_inverter:
-                return image, labels, inverter
+                def inverter(labels):
+                    labels = np.copy(labels)
+                    labels[:, [ymin+1, ymax+1, kp1_y+1, kp2_y+1, kp3_y+1, kp4_y+1, kp5_y+1]] = np.round(labels[:, [ymin+1, ymax+1, kp1_y+1, kp2_y+1, kp3_y+1, kp4_y+1, kp5_y+1]] * (img_height / self.out_height), decimals=0)
+                    labels[:, [xmin+1, xmax+1, kp1_x+1, kp2_x+1, kp3_x+1, kp4_x+1, kp5_x+1]] = np.round(labels[:, [xmin+1, xmax+1, kp1_x+1, kp2_x+1, kp3_x+1, kp4_x+1, kp5_x+1]] * (img_width / self.out_width), decimals=0)
+                    return labels
+
+            if labels is None:
+                if return_inverter:
+                    return image, inverter
+                else:
+                    return image
             else:
-                return image, labels
+                labels = np.copy(labels)
+                labels[:, [kp1_y,kp2_y,kp3_y,kp4_y,kp5_y,kp6_y,kp7_y,kp8_y,kp9_y,kp10_y,kp11_y,kp12_y,kp13_y,kp14_y,kp15_y,kp16_y,kp17_y,kp18_y,kp19_y,kp20_y, kp21_y,kp22_y,kp23_y,kp24_y,kp25_y,kp26_y]] = np.round(labels[:, [kp1_y,kp2_y,kp3_y,kp4_y,kp5_y,kp6_y,kp7_y,kp8_y,kp9_y,kp10_y,kp11_y,kp12_y,kp13_y,kp14_y,kp15_y,kp16_y,kp17_y,kp18_y,kp19_y,kp20_y, kp21_y,kp22_y,kp23_y,kp24_y,kp25_y,kp26_y]] * (self.out_height / img_height), decimals=0)
+                labels[:, [kp1_x,kp2_x,kp3_x,kp4_x,kp5_x,kp6_x,kp7_x,kp8_x,kp9_x,kp10_x,kp11_x,kp12_x,kp13_x,kp14_x,kp15_x,kp16_x,kp17_x,kp18_x,kp19_x,kp20_x, kp21_x,kp22_x,kp23_x,kp24_x,kp25_x,kp26_x]] = np.round(labels[:, [kp1_x,kp2_x,kp3_x,kp4_x,kp5_x,kp6_x,kp7_x,kp8_x,kp9_x,kp10_x,kp11_x,kp12_x,kp13_x,kp14_x,kp15_x,kp16_x,kp17_x,kp18_x,kp19_x,kp20_x, kp21_x,kp22_x,kp23_x,kp24_x,kp25_x,kp26_x]] * (self.out_width / img_width), decimals=0)
+
+                # if not (self.box_filter is None):
+                #     self.box_filter.labels_format = self.labels_format
+                #     labels = self.box_filter(labels=labels,
+                #                              image_height=self.out_height,
+                #                              image_width=self.out_width)
+
+                if return_inverter:
+                    return image, labels, inverter
+                else:
+                    return image, labels
 
 class ResizeRandomInterp:
     '''
