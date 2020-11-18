@@ -100,7 +100,7 @@ class DecodeDetections(Layer):
         self.tf_img_height = tf.constant(self.img_height, dtype=tf.float32, name='img_height')
         self.tf_img_width = tf.constant(self.img_width, dtype=tf.float32, name='img_width')
         self.tf_nms_max_output_size = tf.constant(self.nms_max_output_size, name='nms_max_output_size')
-        self.anchor = [ float(x) for x in open('anchors.txt').readline().split(',') if x != '']
+        
         super(DecodeDetections, self).__init__(**kwargs)
 
     def build(self, input_shape):
