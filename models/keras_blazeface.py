@@ -266,10 +266,16 @@ def blazeface(image_size,
     # Use BlazeFace to extract features
     # [(None, 16, 16, 96), (None, 8, 8, 96)]
     blaze_face = BlazeFace((img_height, img_width, img_channels))(x1)
-    landmark = Conv2D(filters=52, kernel_size=(3, 3), strides=(2, 2), padding='same')(blaze_face)
-    landmark_Pool = AveragePooling2D(pool_size=(4, 4))(landmark)
+
+    landmark_8x8 = Conv2D(filters=52, kernel_size=(3, 3), strides=(2, 2), padding='same')(blaze_face[0])
+    avg_8x8_landmark = AveragePooling2D(pool_size=(4, 4))(landmark_8x8)
+    reshape_8x8_landmark = Reshape((-1, 52), name='reshape_8x8_landmark')(avg_8x8_landmark)
     
-    predictions = Reshape((-1, 52), name='predictions')(landmark_Pool)
+    landmark_16x16 = Conv2D(filters=52, kernel_size=(3, 3), strides=(2, 2), padding='same')(blaze_face[1])
+    avg_16x16_landmark = AveragePooling2D(pool_size=(8, 8))(landmark_16x16)
+    reshape_16x16_landmark = Reshape((-1, 52), name='reshape_16x16_landmark')(avg_16x16_landmark)
+    
+    predictions = Concatenate(axis=1, name='predictions')([reshape_8x8_landmark,reshape_16x16_landmark])
     
     if mode == 'training':
         model = Model(inputs=x, outputs=predictions)

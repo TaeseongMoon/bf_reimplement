@@ -24,7 +24,7 @@ from data_generator.data_augmentation_chain_original_ssd import SSDDataAugmentat
 from data_generator.object_detection_2d_misc_utils import apply_inverse_transforms
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
 img_height = 256 # Height of the model input images
 img_width = 256 # Width of the model input images
@@ -182,7 +182,7 @@ with tf.device('/gpu:0'):
     print("Number of images in the training dataset:\t{:>6}".format(train_dataset_size))
     print("Number of images in the validation dataset:\t{:>6}".format(val_dataset_size))
 
-    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_256_fix_DBset_2_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
+    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_256_16x16_fix_DBset_2_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
                                     monitor='val_loss',
                                     verbose=1,
                                     save_best_only=True,
@@ -191,7 +191,7 @@ with tf.device('/gpu:0'):
                                     period=1)
 
 
-    log_dir = './logs/scalars/'+ 'our_data_256_fix_DBset_2_'+datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = './logs/scalars/'+ 'our_data_256_16x16_fix_DBset_2_'+datetime.now().strftime("%Y%m%d-%H%M%S")
        
     tensorboard_callback = TensorBoard(log_dir=log_dir)
     terminate_on_nan = TerminateOnNaN()

@@ -167,7 +167,7 @@ class SSDInputEncoder:
                 labels[:,2:53:2] /= self.img_width # Normalize xmin and xmax relative to the image width
             
             for _ in range(y_encoded.shape[1]):
-                y_encoded[i,:, :52] = labels[:, 1:]
+                y_encoded[i,:, :52] = np.tile(labels[:, 1:], (1,2,1))
             y_encoded[:,:, 52:] = np.greater_equal(y_encoded[:, :,:52], 0).astype(int)
 
 
@@ -190,7 +190,7 @@ class SSDInputEncoder:
 
     def generate_encoding_template(self, batch_size, diagnostics=False):
         
-        anchor_tensor = np.tile(self.anchor, (batch_size, 1, 1)).astype(np.float)
+        anchor_tensor = np.tile(self.anchor, (batch_size, 2, 1)).astype(np.float)
         
         # anchor_tensor = np.divide(anchor_tensor, normalize_tensor) # Normalize ymin and ymax relative to the image height
         anchor_tensor[:,0:51:2] /= self.img_height
