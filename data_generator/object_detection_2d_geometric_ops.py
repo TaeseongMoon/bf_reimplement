@@ -34,6 +34,7 @@ class Resize:
                  width,
                  interpolation_mode=cv2.INTER_LINEAR,
                  box_filter=None,
+                 fix_image_ratio=True,
                  labels_format={'class_id': 0, 'kp1_x':1, 'kp1_y':2, 'kp2_x':3, 'kp2_y':4, 'kp3_x':5, 'kp3_y':6, 'kp4_x':7, 'kp4_y':8, 'kp5_x':9, 'kp5_y':10,
                  'kp6_x':11, 'kp6_y':12, 'kp7_x':13, 'kp7_y':14, 'kp8_x':15, 'kp8_y':16, 'kp9_x':17, 'kp9_y':18, 'kp10_x':19, 'kp10_y':20,
                  'kp11_x':21, 'kp11_y':22, 'kp12_x':23, 'kp12_y':24, 'kp13_x':25, 'kp13_y':26, 'kp14_x':27, 'kp14_y':28, 'kp15_x':29, 'kp15_y':30,
@@ -61,8 +62,8 @@ class Resize:
         self.interpolation_mode = interpolation_mode
         self.box_filter = box_filter
         self.labels_format = labels_format
-
-    def __call__(self, image, labels=None, return_inverter=False, fix_image_ratio=True):
+        self.fix_image_ratio = fix_image_ratio
+    def __call__(self, image, labels=None, return_inverter=False):
 
         img_height, img_width = image.shape[:2]
 
@@ -119,10 +120,9 @@ class Resize:
         kp26_x = self.labels_format['kp26_x']
         kp26_y = self.labels_format['kp26_y']
 
-        if fix_image_ratio:
+        if self.fix_image_ratio:
             return image, labels
         else:
-            
             image = cv2.resize(image,
                             dsize=(self.out_width, self.out_height),
                             interpolation=self.interpolation_mode)
@@ -164,6 +164,7 @@ class ResizeRandomInterp:
     def __init__(self,
                  height,
                  width,
+                 fix_image_ratio=True,
                  interpolation_modes=[cv2.INTER_NEAREST,
                                       cv2.INTER_LINEAR,
                                       cv2.INTER_CUBIC,
@@ -197,9 +198,11 @@ class ResizeRandomInterp:
         self.interpolation_modes = interpolation_modes
         self.box_filter = box_filter
         self.labels_format = labels_format
+        self.fix_image_ratio=fix_image_ratio
         self.resize = Resize(height=self.height,
                              width=self.width,
                              box_filter=self.box_filter,
+                             fix_image_ratio=self.fix_image_ratio,
                              labels_format=self.labels_format)
 
     def __call__(self, image, labels=None, return_inverter=False):

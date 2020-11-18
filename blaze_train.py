@@ -24,10 +24,10 @@ from data_generator.data_augmentation_chain_original_ssd import SSDDataAugmentat
 from data_generator.object_detection_2d_misc_utils import apply_inverse_transforms
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
-img_height = 128 # Height of the model input images
-img_width = 128 # Width of the model input images
+img_height = 256 # Height of the model input images
+img_width = 256 # Width of the model input images
 img_channels = 3 # Number of color channels of the model input images
 mean_color = [107, 105, 109] # The per-channel mean of the images in the dataset. Do not change this value if you're using any of the pre-trained weights.
 swap_channels = [2, 1, 0] # The color channel order in the original SSD is BGR, so we'll have the model reverse the color channel order of the input images.
@@ -79,8 +79,8 @@ with tf.device('/gpu:0'):
 
     train_images_dir = "/data/"
     val_images_dir = "/data/"
-    train_anno_file = "/data/train_with_box.csv"
-    val_anno_file = "/data/valid_with_box.csv"
+    train_anno_file = "/data/tsmoon_set/train_setting_2.csv"
+    val_anno_file = "/data/tsmoon_set/valid_setting_2.csv"
     # val_anno_file = "./data/valid_annos_split.csv"
     
 
@@ -130,7 +130,8 @@ with tf.device('/gpu:0'):
 
     ssd_data_augmentation = SSDDataAugmentation(img_height=img_height,
                                                 img_width=img_width,
-                                                background=mean_color)
+                                                background=mean_color,
+                                                fix_image_ratio=True)
 
     # For the validation generator:
     convert_to_3_channels = ConvertTo3Channels()
@@ -181,7 +182,7 @@ with tf.device('/gpu:0'):
     print("Number of images in the training dataset:\t{:>6}".format(train_dataset_size))
     print("Number of images in the validation dataset:\t{:>6}".format(val_dataset_size))
 
-    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_26_pooling_regression_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
+    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/blazeface_256_fix_DBset_2_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
                                     monitor='val_loss',
                                     verbose=1,
                                     save_best_only=True,
@@ -190,14 +191,14 @@ with tf.device('/gpu:0'):
                                     period=1)
 
 
-    log_dir = './logs/scalars/'+ 'our_data_'+datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = './logs/scalars/'+ 'our_data_256_fix_DBset_2_'+datetime.now().strftime("%Y%m%d-%H%M%S")
        
     tensorboard_callback = TensorBoard(log_dir=log_dir)
     terminate_on_nan = TerminateOnNaN()
 
     callbacks = [model_checkpoint,
                 # csv_logger,
-                # tensorboard_callback,
+                tensorboard_callback,
                 terminate_on_nan]
 
     initial_epoch   = 0

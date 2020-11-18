@@ -214,6 +214,7 @@ class SSDDataAugmentation:
     def __init__(self,
                  img_height=128,
                  img_width=128,
+                 fix_image_ratio=True,
                  background=(123, 117, 104),
                  labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
         '''
@@ -228,7 +229,7 @@ class SSDDataAugmentation:
         '''
 
         self.labels_format = labels_format
-
+        self.fix_image_ratio=fix_image_ratio
         self.photometric_distortions = SSDPhotometricDistortions()
         self.expand = SSDExpand(background=background, labels_format=self.labels_format)
         self.random_crop = SSDRandomCrop(labels_format=self.labels_format)
@@ -245,6 +246,7 @@ class SSDDataAugmentation:
 
         self.resize = ResizeRandomInterp(height=img_height,
                                          width=img_width,
+                                         fix_image_ratio=self.fix_image_ratio,
                                          interpolation_modes=[cv2.INTER_NEAREST,
                                                               cv2.INTER_LINEAR,
                                                               cv2.INTER_CUBIC,

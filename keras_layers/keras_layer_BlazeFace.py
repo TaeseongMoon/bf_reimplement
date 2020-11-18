@@ -91,8 +91,13 @@ def BlazeFace(input_shape):
     
     inputs = keras.layers.Input(shape=input_shape)
 
-    x_0 = keras.layers.Conv2D(
+    x_00 = keras.layers.Conv2D(
         filters=24, kernel_size=5, strides=2, padding='same')(inputs)
+    x_00 = keras.layers.BatchNormalization()(x_00)
+    x_00 = keras.layers.Activation("relu")(x_00)
+
+    x_0 = keras.layers.Conv2D(
+        filters=24, kernel_size=5, strides=2, padding='same')(x_00)
     x_0 = keras.layers.BatchNormalization()(x_0)
     x_0 = keras.layers.Activation("relu")(x_0)
 

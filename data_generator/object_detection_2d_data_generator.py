@@ -413,9 +413,9 @@ class DataGenerator:
                     h = int(box[4]) - int(box[2])
                     cx = int(box[1]) + w//2
                     cy = int(box[2]) + h//2
-                    x_diff = (cx-64) - int(box[1])
-                    y_diff = (cy-64) - int(box[2])
-                    current_bbox.append([cx-64,cy-64,cx+64,cy+64])
+                    x_diff = (cx-128) - int(box[1])
+                    y_diff = (cy-128) - int(box[2])
+                    current_bbox.append([cx-128,cy-128,cx+128,cy+128])
                     new_label=[[str(int(box[i]) - x_diff), str(int(box[i+1]) - y_diff)] for i in range(6,len(box),2)]
                     new_label = [str(box[5])]+[y for x in new_label for y in x]
                     current_labels.append(new_label)
@@ -455,9 +455,9 @@ class DataGenerator:
                     h = int(box[4]) - int(box[2])
                     cx = int(box[1]) + w//2
                     cy = int(box[2]) + h//2
-                    x_diff = (cx-64) - int(box[1])
-                    y_diff = (cy-64) - int(box[2])
-                    current_bbox.append([cx-64,cy-64,cx+64,cy+64])
+                    x_diff = (cx-128) - int(box[1])
+                    y_diff = (cy-128) - int(box[2])
+                    current_bbox.append([cx-128,cy-128,cx+128,cy+128])
                     new_label=[[str(int(box[i]) - x_diff), str(int(box[i+1]) - y_diff)] for i in range(6,len(box),2)]
                     new_label = [str(box[5])]+[y for x in new_label for y in x]
                     current_labels.append(new_label)
