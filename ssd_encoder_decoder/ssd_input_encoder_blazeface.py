@@ -133,7 +133,7 @@ class SSDInputEncoder:
         self.centers_diag = [] # Anchor box center points as `(cy, cx)` for each predictor layer
         self.anchor = []
         # Iterate over all predictor layers and compute the anchor boxes for each one.
-        self.anchor = [x for x in open('anchors.txt').readline().split(',') if x != '']
+        self.anchor = [x for x in open('anchor_256_fix.txt').readline().split(',') if x != '']
     
 
     def __call__(self, ground_truth_labels, diagnostics=False):
