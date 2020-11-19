@@ -21,7 +21,7 @@ Reference: https://arxiv.org/pdf/1907.05047.pdf
 from __future__ import division
 import numpy as np
 from keras.models import Model
-from keras.layers import Input, Lambda, Conv2D, MaxPooling2D,AveragePooling2D, BatchNormalization, ELU, ReLU, Reshape, Concatenate, Activation
+from keras.layers import Input, Lambda,Conv1D,Conv2D, MaxPooling2D,AveragePooling2D, BatchNormalization, ELU, ReLU, Reshape, Concatenate, Activation
 from keras import Sequential
 from keras.regularizers import l2
 import keras.backend as K
@@ -277,6 +277,7 @@ def blazeface(image_size,
     
     predictions = Concatenate(axis=1, name='predictions')([reshape_8x8_landmark,reshape_16x16_landmark])
     
+
     if mode == 'training':
         model = Model(inputs=x, outputs=predictions)
     elif mode == 'inference':

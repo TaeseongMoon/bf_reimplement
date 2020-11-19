@@ -776,7 +776,11 @@ class Rotate:
 
     def __init__(self,
                  angle,
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
+                 labels_format={'class_id': 0, 'kp1_x':1, 'kp1_y':2, 'kp2_x':3, 'kp2_y':4, 'kp3_x':5, 'kp3_y':6, 'kp4_x':7, 'kp4_y':8, 'kp5_x':9, 'kp5_y':10,
+                 'kp6_x':11, 'kp6_y':12, 'kp7_x':13, 'kp7_y':14, 'kp8_x':15, 'kp8_y':16, 'kp9_x':17, 'kp9_y':18, 'kp10_x':19, 'kp10_y':20,
+                 'kp11_x':21, 'kp11_y':22, 'kp12_x':23, 'kp12_y':24, 'kp13_x':25, 'kp13_y':26, 'kp14_x':27, 'kp14_y':28, 'kp15_x':29, 'kp15_y':30,
+                 'kp16_x':31, 'kp16_y':32, 'kp17_x':33, 'kp17_y':34, 'kp18_x':35, 'kp18_y':36, 'kp19_x':37, 'kp19_y':38, 'kp20_x':39, 'kp20_y':40,
+                 'kp21_x':41, 'kp21_y':42, 'kp22_x':43, 'kp22_y':44, 'kp23_x':45, 'kp23_y':46, 'kp24_x':47, 'kp24_y':48, 'kp25_x':49, 'kp25_y':50, 'kp26_x':51, 'kp26_y':52}):
         '''
         Arguments:
             angle (int): The angle in degrees by which to rotate the images counter-clockwise.
@@ -786,15 +790,69 @@ class Rotate:
                 'xmin', 'ymin', 'xmax', and 'ymax' to their respective indices within last axis of the labels array.
         '''
 
-        if not angle in {90, 180, 270}:
-            raise ValueError("`angle` must be in the set {90, 180, 270}.")
+        if not angle in {15, 30, 330, 345}:
+            raise ValueError("`angle` must be in the set {-30 ~ 30 degree}.")
         self.angle = angle
         self.labels_format = labels_format
+        
 
     def __call__(self, image, labels=None):
 
         img_height, img_width = image.shape[:2]
-
+        kp1_x = self.labels_format['kp1_x']
+        kp1_y = self.labels_format['kp1_y']
+        kp2_x = self.labels_format['kp2_x']
+        kp2_y = self.labels_format['kp2_y']
+        kp3_x = self.labels_format['kp3_x']
+        kp3_y = self.labels_format['kp3_y']
+        kp4_x = self.labels_format['kp4_x']
+        kp4_y = self.labels_format['kp4_y']
+        kp5_x = self.labels_format['kp5_x']
+        kp5_y = self.labels_format['kp5_y']
+        kp6_x = self.labels_format['kp6_x']
+        kp6_y = self.labels_format['kp6_y']
+        kp7_x = self.labels_format['kp7_x']
+        kp7_y = self.labels_format['kp7_y']
+        kp8_x = self.labels_format['kp8_x']
+        kp8_y = self.labels_format['kp8_y']
+        kp9_x = self.labels_format['kp9_x']
+        kp9_y = self.labels_format['kp9_y']
+        kp10_x = self.labels_format['kp10_x']
+        kp10_y = self.labels_format['kp10_y']
+        kp11_x = self.labels_format['kp11_x']
+        kp11_y = self.labels_format['kp11_y']
+        kp12_x = self.labels_format['kp12_x']
+        kp12_y = self.labels_format['kp12_y']
+        kp13_x = self.labels_format['kp13_x']
+        kp13_y = self.labels_format['kp13_y']
+        kp14_x = self.labels_format['kp14_x']
+        kp14_y = self.labels_format['kp14_y']
+        kp15_x = self.labels_format['kp15_x']
+        kp15_y = self.labels_format['kp15_y']
+        kp16_x = self.labels_format['kp16_x']
+        kp16_y = self.labels_format['kp16_y']
+        kp17_x = self.labels_format['kp17_x']
+        kp17_y = self.labels_format['kp17_y']
+        kp18_x = self.labels_format['kp18_x']
+        kp18_y = self.labels_format['kp18_y']
+        kp19_x = self.labels_format['kp19_x']
+        kp19_y = self.labels_format['kp19_y']
+        kp20_x = self.labels_format['kp20_x']
+        kp20_y = self.labels_format['kp20_y']
+        kp21_x = self.labels_format['kp21_x']
+        kp21_y = self.labels_format['kp21_y']
+        kp22_x = self.labels_format['kp22_x']
+        kp22_y = self.labels_format['kp22_y']
+        kp23_x = self.labels_format['kp23_x']
+        kp23_y = self.labels_format['kp23_y']
+        kp24_x = self.labels_format['kp24_x']
+        kp24_y = self.labels_format['kp24_y']
+        kp25_x = self.labels_format['kp25_x']
+        kp25_y = self.labels_format['kp25_y']
+        kp26_x = self.labels_format['kp26_x']
+        kp26_y = self.labels_format['kp26_y']
+        kp_x = [kp1_x, kp2_x, kp3_x, kp4_x, kp5_x, kp6_x, kp7_x, kp8_x, kp9_x, kp10_x, kp11_x, kp12_x, kp13_x, kp14_x, kp15_x, kp16_x, kp17_x, kp18_x, kp19_x, kp20_x, kp21_x, kp22_x, kp23_x, kp24_x, kp25_x, kp26_x]
+        kp_y = [kp1_y, kp2_y, kp3_y, kp4_y, kp5_y, kp6_y, kp7_y, kp8_y, kp9_y, kp10_y, kp11_y, kp12_y, kp13_y, kp14_y, kp15_y, kp16_y, kp17_y, kp18_y, kp19_y, kp20_y, kp21_y, kp22_y, kp23_y, kp24_y, kp25_y, kp26_y]
         # Compute the rotation matrix.
         M = cv2.getRotationMatrix2D(center=(img_width / 2, img_height / 2),
                                     angle=self.angle,
@@ -820,32 +878,37 @@ class Rotate:
         if labels is None:
             return image
         else:
-            xmin = self.labels_format['xmin']
-            ymin = self.labels_format['ymin']
-            xmax = self.labels_format['xmax']
-            ymax = self.labels_format['ymax']
-
+            
             labels = np.copy(labels)
+            # labels = cv2.transform(labels, M)
             # Rotate the bounding boxes accordingly.
             # Transform two opposite corner points of the rectangular boxes using the rotation matrix `M`.
-            toplefts = np.array([labels[:,xmin], labels[:,ymin], np.ones(labels.shape[0])])
-            bottomrights = np.array([labels[:,xmax], labels[:,ymax], np.ones(labels.shape[0])])
-            new_toplefts = (np.dot(M, toplefts)).T
-            new_bottomrights = (np.dot(M, bottomrights)).T
-            labels[:,[xmin,ymin]] = np.round(new_toplefts, decimals=0).astype(np.int)
-            labels[:,[xmax,ymax]] = np.round(new_bottomrights, decimals=0).astype(np.int)
+            # toplefts = np.array([labels[:,xmin], labels[:,ymin], np.ones(labels.shape[0])])
+            # new_toplefts = (np.dot(M, toplefts)).T
+            # bottomrights = np.array([labels[:,xmax], labels[:,ymax], np.ones(labels.shape[0])])
+            # new_bottomrights = (np.dot(M, bottomrights)).T
+            rot_point = lambda x, y :(np.dot(M, np.array([x, y, np.ones(labels.shape[0])]))).T
+            # kp1 = rot_point(kp1_x, kp1_y)
+            
+            
+            
+            for x, y in zip(kp_x, kp_y):
+                k = rot_point(x, y)
+                labels[:, [x, y]] = np.round(k.tolist(), decimals =0).astype(np.int).reshape((1,2))
+            # labels[:,[xmin,ymin]] = np.round(new_toplefts, decimals=0).astype(np.int)
+            # labels[:,[xmax,ymax]] = np.round(new_bottomrights, decimals=0).astype(np.int)
 
-            if self.angle == 90:
-                # ymin and ymax were switched by the rotation.
-                labels[:,[ymax,ymin]] = labels[:,[ymin,ymax]]
-            elif self.angle == 180:
-                # ymin and ymax were switched by the rotation,
-                # and also xmin and xmax were switched.
-                labels[:,[ymax,ymin]] = labels[:,[ymin,ymax]]
-                labels[:,[xmax,xmin]] = labels[:,[xmin,xmax]]
-            elif self.angle == 270:
-                # xmin and xmax were switched by the rotation.
-                labels[:,[xmax,xmin]] = labels[:,[xmin,xmax]]
+            # if self.angle == 90:
+            #     # ymin and ymax were switched by the rotation.
+            #     labels[:,[ymax,ymin]] = labels[:,[ymin,ymax]]
+            # elif self.angle == 180:
+            #     # ymin and ymax were switched by the rotation,
+            #     # and also xmin and xmax were switched.
+            #     labels[:,[ymax,ymin]] = labels[:,[ymin,ymax]]
+            #     labels[:,[xmax,xmin]] = labels[:,[xmin,xmax]]
+            # elif self.angle == 270:
+            #     # xmin and xmax were switched by the rotation.
+            #     labels[:,[xmax,xmin]] = labels[:,[xmin,xmax]]
 
             return image, labels
 
@@ -855,7 +918,7 @@ class RandomRotate:
     '''
 
     def __init__(self,
-                 angles=[90, 180, 270],
+                 angles=[15, 30, 330, 345],
                  prob=0.5,
                  labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
         '''
@@ -869,12 +932,12 @@ class RandomRotate:
                 'xmin', 'ymin', 'xmax', and 'ymax' to their respective indices within last axis of the labels array.
         '''
         for angle in angles:
-            if not angle in {90, 180, 270}:
+            if not angle in {15, 30, 330, 345}:
                 raise ValueError("`angles` can only contain the values 90, 180, and 270.")
         self.angles = angles
         self.prob = prob
         self.labels_format = labels_format
-        self.rotate = Rotate(angle=90, labels_format=self.labels_format)
+        self.rotate = Rotate(angle=15, labels_format=self.labels_format)
 
     def __call__(self, image, labels=None):
 

@@ -24,7 +24,7 @@ from data_generator.data_augmentation_chain_original_ssd import SSDDataAugmentat
 from data_generator.object_detection_2d_misc_utils import apply_inverse_transforms
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
 img_height = 256 # Height of the model input images
 img_width = 256 # Width of the model input images
@@ -198,11 +198,11 @@ with tf.device('/gpu:0'):
 
     callbacks = [model_checkpoint,
                 # csv_logger,
-                tensorboard_callback,
+                # tensorboard_callback,
                 terminate_on_nan]
 
     initial_epoch   = 0
-    final_epoch     = 160
+    final_epoch     = 140
     steps_per_epoch = train_dataset_size // batch_size
 
     history = model.fit(train_generator,

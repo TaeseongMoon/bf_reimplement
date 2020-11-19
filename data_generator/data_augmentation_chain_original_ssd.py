@@ -23,7 +23,7 @@ import inspect
 
 from data_generator.object_detection_2d_photometric_ops import ConvertColor, ConvertDataType, ConvertTo3Channels, RandomBrightness, RandomContrast, RandomHue, RandomSaturation, RandomChannelSwap
 from data_generator.object_detection_2d_patch_sampling_ops import PatchCoordinateGenerator, RandomPatch, RandomPatchInf
-from data_generator.object_detection_2d_geometric_ops import ResizeRandomInterp, RandomFlip
+from data_generator.object_detection_2d_geometric_ops import ResizeRandomInterp, RandomFlip, RandomRotate
 from data_generator.object_detection_2d_image_boxes_validation_utils import BoundGenerator, BoxFilter, ImageValidator
 
 class SSDRandomCrop:
@@ -216,7 +216,11 @@ class SSDDataAugmentation:
                  img_width=128,
                  fix_image_ratio=True,
                  background=(123, 117, 104),
-                 labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4, 'kp1_x':5, 'kp1_y':6, 'kp2_x':7, 'kp2_y':8, 'kp3_x':9, 'kp3_y':10, 'kp4_x':11, 'kp4_y':12, 'kp5_x':13, 'kp5_y':14}):
+                 labels_format={'class_id': 0, 'kp1_x':1, 'kp1_y':2, 'kp2_x':3, 'kp2_y':4, 'kp3_x':5, 'kp3_y':6, 'kp4_x':7, 'kp4_y':8, 'kp5_x':9, 'kp5_y':10,
+                 'kp6_x':11, 'kp6_y':12, 'kp7_x':13, 'kp7_y':14, 'kp8_x':15, 'kp8_y':16, 'kp9_x':17, 'kp9_y':18, 'kp10_x':19, 'kp10_y':20,
+                 'kp11_x':21, 'kp11_y':22, 'kp12_x':23, 'kp12_y':24, 'kp13_x':25, 'kp13_y':26, 'kp14_x':27, 'kp14_y':28, 'kp15_x':29, 'kp15_y':30,
+                 'kp16_x':31, 'kp16_y':32, 'kp17_x':33, 'kp17_y':34, 'kp18_x':35, 'kp18_y':36, 'kp19_x':37, 'kp19_y':38, 'kp20_x':39, 'kp20_y':40,
+                 'kp21_x':41, 'kp21_y':42, 'kp22_x':43, 'kp22_y':44, 'kp23_x':45, 'kp23_y':46, 'kp24_x':47, 'kp24_y':48, 'kp25_x':49, 'kp25_y':50, 'kp26_x':51, 'kp26_y':52}):
         '''
         Arguments:
             height (int): The desired height of the output images in pixels.
@@ -234,7 +238,7 @@ class SSDDataAugmentation:
         self.expand = SSDExpand(background=background, labels_format=self.labels_format)
         self.random_crop = SSDRandomCrop(labels_format=self.labels_format)
         self.random_flip = RandomFlip(dim='horizontal', prob=0.5, labels_format=self.labels_format)
-
+        self.random_rotate = RandomRotate(labels_format=self.labels_format)
         # This box filter makes sure that the resized images don't contain any degenerate boxes.
         # Resizing the images could lead the boxes to becomes smaller. For boxes that are already
         # pretty small, that might result in boxes with height and/or width zero, which we obviously
@@ -259,7 +263,9 @@ class SSDDataAugmentation:
                          #self.expand,
                         #  self.random_crop,
                         #  self.random_flip,
-                         self.resize]
+                        #  self.random_rotate,
+                        ]
+                        #  self.resize]
 
     def __call__(self, image, labels, return_inverter=False):
         self.expand.labels_format = self.labels_format
