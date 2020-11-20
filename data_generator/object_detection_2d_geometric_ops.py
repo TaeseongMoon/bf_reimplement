@@ -790,7 +790,7 @@ class Rotate:
                 'xmin', 'ymin', 'xmax', and 'ymax' to their respective indices within last axis of the labels array.
         '''
 
-        if not angle in {15, 30, 330, 345}:
+        if not angle in {0,5,10,15,345,350,355}:
             raise ValueError("`angle` must be in the set {-30 ~ 30 degree}.")
         self.angle = angle
         self.labels_format = labels_format
@@ -880,35 +880,10 @@ class Rotate:
         else:
             
             labels = np.copy(labels)
-            # labels = cv2.transform(labels, M)
-            # Rotate the bounding boxes accordingly.
-            # Transform two opposite corner points of the rectangular boxes using the rotation matrix `M`.
-            # toplefts = np.array([labels[:,xmin], labels[:,ymin], np.ones(labels.shape[0])])
-            # new_toplefts = (np.dot(M, toplefts)).T
-            # bottomrights = np.array([labels[:,xmax], labels[:,ymax], np.ones(labels.shape[0])])
-            # new_bottomrights = (np.dot(M, bottomrights)).T
             rot_point = lambda x, y :(np.dot(M, np.array([x, y, np.ones(labels.shape[0])]))).T
-            # kp1 = rot_point(kp1_x, kp1_y)
-            
-            
-            
             for x, y in zip(kp_x, kp_y):
-                k = rot_point(x, y)
+                k = rot_point(float(labels[:,x][0]), float(labels[:,y][0]))
                 labels[:, [x, y]] = np.round(k.tolist(), decimals =0).astype(np.int).reshape((1,2))
-            # labels[:,[xmin,ymin]] = np.round(new_toplefts, decimals=0).astype(np.int)
-            # labels[:,[xmax,ymax]] = np.round(new_bottomrights, decimals=0).astype(np.int)
-
-            # if self.angle == 90:
-            #     # ymin and ymax were switched by the rotation.
-            #     labels[:,[ymax,ymin]] = labels[:,[ymin,ymax]]
-            # elif self.angle == 180:
-            #     # ymin and ymax were switched by the rotation,
-            #     # and also xmin and xmax were switched.
-            #     labels[:,[ymax,ymin]] = labels[:,[ymin,ymax]]
-            #     labels[:,[xmax,xmin]] = labels[:,[xmin,xmax]]
-            # elif self.angle == 270:
-            #     # xmin and xmax were switched by the rotation.
-            #     labels[:,[xmax,xmin]] = labels[:,[xmin,xmax]]
 
             return image, labels
 
@@ -918,7 +893,7 @@ class RandomRotate:
     '''
 
     def __init__(self,
-                 angles=[15, 30, 330, 345],
+                 angles=[0, 5, 10, 15, 345, 350, 355],
                  prob=0.5,
                  labels_format={'class_id': 0, 'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}):
         '''
@@ -932,7 +907,7 @@ class RandomRotate:
                 'xmin', 'ymin', 'xmax', and 'ymax' to their respective indices within last axis of the labels array.
         '''
         for angle in angles:
-            if not angle in {15, 30, 330, 345}:
+            if not angle in {0,5,10,15,345,350,355}:
                 raise ValueError("`angles` can only contain the values 90, 180, and 270.")
         self.angles = angles
         self.prob = prob

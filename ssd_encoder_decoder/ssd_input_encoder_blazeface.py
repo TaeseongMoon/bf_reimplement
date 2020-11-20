@@ -170,7 +170,6 @@ class SSDInputEncoder:
                 y_encoded[i,:, :52] = np.tile(labels[:, 1:], (1,2,1))
             y_encoded[:,:, 52:] = np.greater_equal(y_encoded[:, :,:52], 0).astype(int)
 
-
         ###################################################s##########`#####################
         # Convert box coordinates to anchor box offsets.
         ##################################################################################

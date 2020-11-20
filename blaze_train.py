@@ -182,7 +182,7 @@ with tf.device('/gpu:0'):
     print("Number of images in the training dataset:\t{:>6}".format(train_dataset_size))
     print("Number of images in the validation dataset:\t{:>6}".format(val_dataset_size))
 
-    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/new_anchor_256_16x16_fix_DBset_2_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
+    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/new_anchor_256_16_fix_DBset_2_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
                                     monitor='val_loss',
                                     verbose=1,
                                     save_best_only=True,
@@ -191,14 +191,14 @@ with tf.device('/gpu:0'):
                                     period=1)
 
 
-    log_dir = './logs/scalars/'+ 'new_anchor_256_16x16_fix_DBset_2_'+datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = './logs/scalars/'+ 'new_anchor_256_16_fix_DBset_2_'+datetime.now().strftime("%Y%m%d-%H%M%S")
        
     tensorboard_callback = TensorBoard(log_dir=log_dir)
     terminate_on_nan = TerminateOnNaN()
 
     callbacks = [model_checkpoint,
                 # csv_logger,
-                # tensorboard_callback,
+                tensorboard_callback,
                 terminate_on_nan]
 
     initial_epoch   = 0
