@@ -263,9 +263,9 @@ class SSDDataAugmentation:
                          #self.expand,
                         #  self.random_crop,
                         #  self.random_flip,
-                        #  self.random_rotate,
-                        # ]
-                         self.resize]
+                         self.random_rotate
+                        ]
+                        #  self.resize]
 
     def __call__(self, image, labels, return_inverter=False):
         self.expand.labels_format = self.labels_format
