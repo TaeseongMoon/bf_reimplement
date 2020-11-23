@@ -202,7 +202,7 @@ with tf.device('/gpu:0'):
                 terminate_on_nan]
 
     initial_epoch   = 0
-    final_epoch     = 160
+    final_epoch     = 140
     steps_per_epoch = train_dataset_size // batch_size
 
     history = model.fit(train_generator,
