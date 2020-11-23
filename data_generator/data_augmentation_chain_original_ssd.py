@@ -263,7 +263,7 @@ class SSDDataAugmentation:
                          #self.expand,
                         #  self.random_crop,
                         #  self.random_flip,
-                         self.random_rotate
+                        #  self.random_rotate
                         ]
                         #  self.resize]
 
