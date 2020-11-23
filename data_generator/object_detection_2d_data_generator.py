@@ -408,7 +408,6 @@ class DataGenerator:
         for i, box in enumerate(data):
             if box[0] == current_file: # If this box (i.e. this line of the CSV file) belongs to the current image file
                 if self.fix_image_ratio:
-
                     w = int(box[3]) - int(box[1])
                     h = int(box[4]) - int(box[2])
                     cx = int(box[1]) + w//2
@@ -416,7 +415,7 @@ class DataGenerator:
                     x_diff = (cx-128) - int(box[1])
                     y_diff = (cy-128) - int(box[2])
                     current_bbox.append([cx-128,cy-128,cx+128,cy+128])
-                    new_label=[[str(int(box[i]) - x_diff), str(int(box[i+1]) - y_diff)] for i in range(6,len(box),2)]
+                    new_label=[[str(int(box[x]) - x_diff), str(int(box[x+1]) - y_diff)] if box[x] > -1 else [box[x], box[x+1]] for x in range(6,len(box),2)]
                     new_label = [str(box[5])]+[y for x in new_label for y in x]
                     current_labels.append(new_label)
                 else:
@@ -458,7 +457,7 @@ class DataGenerator:
                     x_diff = (cx-128) - int(box[1])
                     y_diff = (cy-128) - int(box[2])
                     current_bbox.append([cx-128,cy-128,cx+128,cy+128])
-                    new_label=[[str(int(box[i]) - x_diff), str(int(box[i+1]) - y_diff)] for i in range(6,len(box),2)]
+                    new_label=[[str(int(box[x]) - x_diff), str(int(box[x+1]) - y_diff)] if box[x] > -1 else [box[x], box[x+1]] for x in range(6,len(box),2)]
                     new_label = [str(box[5])]+[y for x in new_label for y in x]
                     current_labels.append(new_label)
                 else:
@@ -504,76 +503,6 @@ class DataGenerator:
                  returns={'processed_images', 'encoded_labels'},
                  keep_images_without_gt=False,
                  degenerate_box_handling='remove'):
-        '''
-        Generates batches of samples and (optionally) corresponding labels indefinitely.
-
-        Can shuffle the samples consistently after each complete pass.
-
-        Optionally takes a list of arbitrary image transformations to apply to the
-        samples ad hoc.
-
-        Arguments:
-            batch_size (int, optional): The size of the batches to be generated.
-            shuffle (bool, optional): Whether or not to shuffle the dataset before each pass.
-                This option should always be `True` during training, but it can be useful to turn shuffling off
-                for debugging or if you're using the generator for prediction.
-            transformations (list, optional): A list of transformations that will be applied to the images and labels
-                in the given order. Each transformation is a callable that takes as input an image (as a Numpy array)
-                and optionally labels (also as a Numpy array) and returns an image and optionally labels in the same
-                format.
-            label_encoder (callable, optional): Only relevant if labels are given. A callable that takes as input the
-                labels of a batch (as a list of Numpy arrays) and returns some structure that represents those labels.
-                The general use case for this is to convert labels from their input format to a format that a given object
-                detection model needs as its training targets.
-            returns (set, optional): A set of strings that determines what outputs the generator yields. The generator's output
-                is always a tuple that contains the outputs specified in this set and only those. If an output is not available,
-                it will be `None`. The output tuple can contain the following outputs according to the specified keyword strings:
-                * 'processed_images': An array containing the processed images. Will always be in the outputs, so it doesn't
-                    matter whether or not you include this keyword in the set.
-                * 'encoded_labels': The encoded labels tensor. Will always be in the outputs if a label encoder is given,
-                    so it doesn't matter whether or not you include this keyword in the set if you pass a label encoder.
-                * 'matched_anchors': Only available if `labels_encoder` is an `SSDInputEncoder` object. The same as 'encoded_labels',
-                    but containing anchor box coordinates for all matched anchor boxes instead of ground truth coordinates.
-                    This can be useful to visualize what anchor boxes are being matched to each ground truth box. Only available
-                    in training mode.
-                * 'processed_labels': The processed, but not yet encoded labels. This is a list that contains for each
-                    batch image a Numpy array with all ground truth boxes for that image. Only available if ground truth is available.
-                * 'filenames': A list containing the file names (full paths) of the images in the batch.
-                * 'image_ids': A list containing the integer IDs of the images in the batch. Only available if there
-                    are image IDs available.
-                * 'evaluation-neutral': A nested list of lists of booleans. Each list contains `True` or `False` for every ground truth
-                    bounding box of the respective image depending on whether that bounding box is supposed to be evaluation-neutral (`True`)
-                    or not (`False`). May return `None` if there exists no such concept for a given dataset. An example for
-                    evaluation-neutrality are the ground truth boxes annotated as "difficult" in the Pascal VOC datasets, which are
-                    usually treated to be neutral in a model evaluation.
-                * 'inverse_transform': A nested list that contains a list of "inverter" functions for each item in the batch.
-                    These inverter functions take (predicted) labels for an image as input and apply the inverse of the transformations
-                    that were applied to the original image to them. This makes it possible to let the model make predictions on a
-                    transformed image and then convert these predictions back to the original image. This is mostly relevant for
-                    evaluation: If you want to evaluate your model on a dataset with varying image sizes, then you are forced to
-                    transform the images somehow (e.g. by resizing or cropping) to make them all the same size. Your model will then
-                    predict boxes for those transformed images, but for the evaluation you will need predictions with respect to the
-                    original images, not with respect to the transformed images. This means you will have to transform the predicted
-                    box coordinates back to the original image sizes. Note that for each image, the inverter functions for that
-                    image need to be applied in the order in which they are given in the respective list for that image.
-                * 'original_images': A list containing the original images in the batch before any processing.
-                * 'original_labels': A list containing the original ground truth boxes for the images in this batch before any
-                    processing. Only available if ground truth is available.
-                The order of the outputs in the tuple is the order of the list above. If `returns` contains a keyword for an
-                output that is unavailable, that output omitted in the yielded tuples and a warning will be raised.
-            keep_images_without_gt (bool, optional): If `False`, images for which there aren't any ground truth boxes before
-                any transformations have been applied will be removed from the batch. If `True`, such images will be kept
-                in the batch.
-            degenerate_box_handling (str, optional): How to handle degenerate boxes, which are boxes that have `xmax <= xmin` and/or
-                `ymax <= ymin`. Degenerate boxes can sometimes be in the dataset, or non-degenerate boxes can become degenerate
-                after they were processed by transformations. Note that the generator checks for degenerate boxes after all
-                transformations have been applied (if any), but before the labels were passed to the `label_encoder` (if one was given).
-                Can be one of 'warn' or 'remove'. If 'warn', the generator will merely print a warning to let you know that there
-                are degenerate boxes in a batch. If 'remove', the generator will remove degenerate boxes from the batch silently.
-
-        Yields:
-            The next batch as a tuple of items as defined by the `returns` argument.
-        '''
 
         if self.dataset_size == 0:
             raise DatasetError("Cannot generate batches because you did not load a dataset.")
@@ -690,6 +619,7 @@ class DataGenerator:
                         batch_X.append(np.array(image, dtype=np.uint8))
             
             # Get the labels for this batch (if there are any).
+            
             if not (self.labels is None):
                 batch_y = deepcopy(self.labels[current:current+batch_size])
             else:
@@ -739,7 +669,7 @@ class DataGenerator:
                     for transform in transformations:
 
                         if not (self.labels is None):
-
+                            
                             if ('inverse_transform' in returns) and ('return_inverter' in inspect.signature(transform).parameters):
                                 batch_X[i], batch_y[i], inverse_transform = transform(batch_X[i], batch_y[i], return_inverter=True)
                                 inverse_transforms.append(inverse_transform)
@@ -760,33 +690,6 @@ class DataGenerator:
                                 batch_X[i] = transform(batch_X[i])
 
                     batch_inverse_transforms.append(inverse_transforms[::-1])
-                
-                #########################################################################################
-                # Check for degenerate boxes in this batch item.
-                #########################################################################################
-
-                # if not (self.labels is None):
-
-                #     xmin = self.labels_format['xmin']
-                #     ymin = self.labels_format['ymin']
-                #     xmax = self.labels_format['xmax']
-                #     ymax = self.labels_format['ymax']
-
-                #     if np.any(batch_y[i][:,xmax] - batch_y[i][:,xmin] <= 0) or np.any(batch_y[i][:,ymax] - batch_y[i][:,ymin] <= 0):
-                #         if degenerate_box_handling == 'warn':
-                #             warnings.warn("Detected degenerate ground truth bounding boxes for batch item {} with bounding boxes {}, ".format(i, batch_y[i]) +
-                #                           "i.e. bounding boxes where xmax <= xmin and/or ymax <= ymin. " +
-                #                           "This could mean that your dataset contains degenerate ground truth boxes, or that any image transformations you may apply might " +
-                #                           "result in degenerate ground truth boxes, or that you are parsing the ground truth in the wrong coordinate format." +
-                #                           "Degenerate ground truth bounding boxes may lead to NaN errors during the training.")
-                #         elif degenerate_box_handling == 'remove':
-                #             batch_y[i] = box_filter(batch_y[i])
-                #             if (batch_y[i].size == 0) and not keep_images_without_gt:
-                #                 batch_items_to_remove.append(i)
-
-            #########################################################################################
-            # Remove any items we might not want to keep from the batch.
-            #########################################################################################
 
             if batch_items_to_remove:
                 for j in sorted(batch_items_to_remove, reverse=True):
@@ -806,6 +709,8 @@ class DataGenerator:
             # CAUTION: Converting `batch_X` into an array will result in an empty batch if the images have varying sizes
             #          or varying numbers of channels. At this point, all images must have the same size and the same
             #          number of channels.
+            import pdb
+            pdb.set_trace()
             batch_X = np.array(batch_X)
             if (batch_X.size == 0):
                 raise DegenerateBatchError("You produced an empty batch. This might be because the images in the batch vary " +

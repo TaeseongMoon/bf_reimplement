@@ -67,66 +67,12 @@ class Resize:
 
         img_height, img_width = image.shape[:2]
 
-        kp1_x = self.labels_format['kp1_x']
-        kp1_y = self.labels_format['kp1_y']
-        kp2_x = self.labels_format['kp2_x']
-        kp2_y = self.labels_format['kp2_y']
-        kp3_x = self.labels_format['kp3_x']
-        kp3_y = self.labels_format['kp3_y']
-        kp4_x = self.labels_format['kp4_x']
-        kp4_y = self.labels_format['kp4_y']
-        kp5_x = self.labels_format['kp5_x']
-        kp5_y = self.labels_format['kp5_y']
-        kp6_x = self.labels_format['kp6_x']
-        kp6_y = self.labels_format['kp6_y']
-        kp7_x = self.labels_format['kp7_x']
-        kp7_y = self.labels_format['kp7_y']
-        kp8_x = self.labels_format['kp8_x']
-        kp8_y = self.labels_format['kp8_y']
-        kp9_x = self.labels_format['kp9_x']
-        kp9_y = self.labels_format['kp9_y']
-        kp10_x = self.labels_format['kp10_x']
-        kp10_y = self.labels_format['kp10_y']
-        kp11_x = self.labels_format['kp11_x']
-        kp11_y = self.labels_format['kp11_y']
-        kp12_x = self.labels_format['kp12_x']
-        kp12_y = self.labels_format['kp12_y']
-        kp13_x = self.labels_format['kp13_x']
-        kp13_y = self.labels_format['kp13_y']
-        kp14_x = self.labels_format['kp14_x']
-        kp14_y = self.labels_format['kp14_y']
-        kp15_x = self.labels_format['kp15_x']
-        kp15_y = self.labels_format['kp15_y']
-        kp16_x = self.labels_format['kp16_x']
-        kp16_y = self.labels_format['kp16_y']
-        kp17_x = self.labels_format['kp17_x']
-        kp17_y = self.labels_format['kp17_y']
-        kp18_x = self.labels_format['kp18_x']
-        kp18_y = self.labels_format['kp18_y']
-        kp19_x = self.labels_format['kp19_x']
-        kp19_y = self.labels_format['kp19_y']
-        kp20_x = self.labels_format['kp20_x']
-        kp20_y = self.labels_format['kp20_y']
-        kp21_x = self.labels_format['kp21_x']
-        kp21_y = self.labels_format['kp21_y']
-        kp22_x = self.labels_format['kp22_x']
-        kp22_y = self.labels_format['kp22_y']
-        kp23_x = self.labels_format['kp23_x']
-        kp23_y = self.labels_format['kp23_y']
-        kp24_x = self.labels_format['kp24_x']
-        kp24_y = self.labels_format['kp24_y']
-        kp25_x = self.labels_format['kp25_x']
-        kp25_y = self.labels_format['kp25_y']
-        kp26_x = self.labels_format['kp26_x']
-        kp26_y = self.labels_format['kp26_y']
-
         if self.fix_image_ratio:
             return image, labels
         else:
             image = cv2.resize(image,
                             dsize=(self.out_width, self.out_height),
                             interpolation=self.interpolation_mode)
-
             if return_inverter:
                 def inverter(labels):
                     labels = np.copy(labels)
@@ -141,9 +87,9 @@ class Resize:
                     return image
             else:
                 labels = np.copy(labels)
-                labels[:, [kp1_y,kp2_y,kp3_y,kp4_y,kp5_y,kp6_y,kp7_y,kp8_y,kp9_y,kp10_y,kp11_y,kp12_y,kp13_y,kp14_y,kp15_y,kp16_y,kp17_y,kp18_y,kp19_y,kp20_y, kp21_y,kp22_y,kp23_y,kp24_y,kp25_y,kp26_y]] = np.round(labels[:, [kp1_y,kp2_y,kp3_y,kp4_y,kp5_y,kp6_y,kp7_y,kp8_y,kp9_y,kp10_y,kp11_y,kp12_y,kp13_y,kp14_y,kp15_y,kp16_y,kp17_y,kp18_y,kp19_y,kp20_y, kp21_y,kp22_y,kp23_y,kp24_y,kp25_y,kp26_y]] * (self.out_height / img_height), decimals=0)
-                labels[:, [kp1_x,kp2_x,kp3_x,kp4_x,kp5_x,kp6_x,kp7_x,kp8_x,kp9_x,kp10_x,kp11_x,kp12_x,kp13_x,kp14_x,kp15_x,kp16_x,kp17_x,kp18_x,kp19_x,kp20_x, kp21_x,kp22_x,kp23_x,kp24_x,kp25_x,kp26_x]] = np.round(labels[:, [kp1_x,kp2_x,kp3_x,kp4_x,kp5_x,kp6_x,kp7_x,kp8_x,kp9_x,kp10_x,kp11_x,kp12_x,kp13_x,kp14_x,kp15_x,kp16_x,kp17_x,kp18_x,kp19_x,kp20_x, kp21_x,kp22_x,kp23_x,kp24_x,kp25_x,kp26_x]] * (self.out_width / img_width), decimals=0)
-
+                
+                labels[:,1:52:2] = np.round(labels[:,1:52:2].astype(float) * (self.out_height / img_height), decimals=0)
+                labels[:,2:53:2] = np.round(labels[:,2:53:2].astype(float) * (self.out_height / img_height), decimals=0)
                 # if not (self.box_filter is None):
                 #     self.box_filter.labels_format = self.labels_format
                 #     labels = self.box_filter(labels=labels,
@@ -869,21 +815,23 @@ class Rotate:
         # Adjust the rotation matrix to take into account the translation.
         M[1, 2] += (img_height_new - img_height) / 2
         M[0, 2] += (img_width_new - img_width) / 2
-
+        import pdb
+        pdb.set_trace()
         # Rotate the image.
         image = cv2.warpAffine(image,
                                M=M,
                                dsize=(img_width_new, img_height_new))
-
+        
         if labels is None:
             return image
         else:
-            
             labels = np.copy(labels)
+
             rot_point = lambda x, y :(np.dot(M, np.array([x, y, np.ones(labels.shape[0])]))).T
             for x, y in zip(kp_x, kp_y):
-                k = rot_point(float(labels[:,x][0]), float(labels[:,y][0]))
-                labels[:, [x, y]] = np.round(k.tolist(), decimals =0).astype(np.int).reshape((1,2))
+                if float(labels[:,x][0]) > -1 and float(labels[:,y][0]) > -1:
+                    k = rot_point(float(labels[:,x]), float(labels[:,y]))
+                    labels[:, [x, y]] = np.round(k.tolist(), decimals =0).astype(int).reshape((1,2))
 
             return image, labels
 

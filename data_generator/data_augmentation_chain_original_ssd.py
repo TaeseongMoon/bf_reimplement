@@ -194,13 +194,11 @@ class SSDPhotometricDistortions:
 
         # Choose sequence 1 with probability 0.5.
         if np.random.choice(2):
-
             for transform in self.sequence1:
                 image, labels = transform(image, labels)
             return image, labels
         # Choose sequence 2 with probability 0.5.
         else:
-
             for transform in self.sequence2:
                 image, labels = transform(image, labels)
             return image, labels
@@ -212,8 +210,8 @@ class SSDDataAugmentation:
     '''
 
     def __init__(self,
-                 img_height=128,
-                 img_width=128,
+                 img_height=256,
+                 img_width=256,
                  fix_image_ratio=True,
                  background=(123, 117, 104),
                  labels_format={'class_id': 0, 'kp1_x':1, 'kp1_y':2, 'kp2_x':3, 'kp2_y':4, 'kp3_x':5, 'kp3_y':6, 'kp4_x':7, 'kp4_y':8, 'kp5_x':9, 'kp5_y':10,
@@ -263,9 +261,9 @@ class SSDDataAugmentation:
                          #self.expand,
                         #  self.random_crop,
                         #  self.random_flip,
-                        #  self.random_rotate
+                         self.random_rotate,
+                         self.resize
                         ]
-                        #  self.resize]
 
     def __call__(self, image, labels, return_inverter=False):
         self.expand.labels_format = self.labels_format

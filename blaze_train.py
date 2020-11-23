@@ -11,7 +11,6 @@ import numpy as np
 from models.keras_blazeface import blazeface
 from keras_loss_function.keras_ssd_loss import SSDLoss
 from keras_layers.keras_layer_DecodeDetections import DecodeDetections
-from keras_layers.keras_layer_DecodeDetectionsFast import DecodeDetectionsFast
 from keras_layers.keras_layer_L2Normalization import L2Normalization
 
 from ssd_encoder_decoder.ssd_input_encoder_blazeface import SSDInputEncoder
@@ -197,7 +196,7 @@ with tf.device('/gpu:0'):
 
     callbacks = [model_checkpoint,
                 # csv_logger,
-                tensorboard_callback,
+                # tensorboard_callback,
                 terminate_on_nan]
 
     initial_epoch   = 0

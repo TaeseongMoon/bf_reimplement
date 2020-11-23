@@ -140,7 +140,7 @@ class SSDInputEncoder:
 
           
         batch_size = len(ground_truth_labels)
-
+        
         ##################################################################################
         # Generate the template for y_encoded.
         ##################################################################################
@@ -165,7 +165,7 @@ class SSDInputEncoder:
             if self.normalize_coords:
                 labels[:,1:52:2] /= self.img_height # Normalize ymin and ymax relative to the image height
                 labels[:,2:53:2] /= self.img_width # Normalize xmin and xmax relative to the image width
-            
+
             for _ in range(y_encoded.shape[1]):
                 y_encoded[i,:, :52] = np.tile(labels[:, 1:], (1,2,1))
             y_encoded[:,:, 52:] = np.greater_equal(y_encoded[:, :,:52], 0).astype(int)
