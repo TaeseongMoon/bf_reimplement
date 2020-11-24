@@ -51,6 +51,7 @@ def blazeface(image_size,
                 confidence_thresh=0.01,
                 iou_threshold=0.45,
                 top_k=200,
+                feature=52,
                 nms_max_output_size=400,
                 return_predictor_sizes=False):
 
@@ -153,13 +154,13 @@ def blazeface(image_size,
     # [(None, 16, 16, 96), (None, 8, 8, 96)]
     blaze_face = BlazeFace((img_height, img_width, img_channels))(x1)
 
-    landmark_8x8 = Conv2D(filters=52, kernel_size=(3, 3), strides=(2, 2), padding='same')(blaze_face[0])
+    landmark_8x8 = Conv2D(filters=feature, kernel_size=(3, 3), strides=(2, 2), padding='same')(blaze_face[0])
     avg_8x8_landmark = AveragePooling2D(pool_size=(4, 4))(landmark_8x8)
-    reshape_8x8_landmark = Reshape((-1, 52), name='reshape_8x8_landmark')(avg_8x8_landmark)
+    reshape_8x8_landmark = Reshape((-1, feature), name='reshape_8x8_landmark')(avg_8x8_landmark)
     
-    landmark_16x16 = Conv2D(filters=52, kernel_size=(3, 3), strides=(2, 2), padding='same')(blaze_face[1])
+    landmark_16x16 = Conv2D(filters=feature, kernel_size=(3, 3), strides=(2, 2), padding='same')(blaze_face[1])
     avg_16x16_landmark = AveragePooling2D(pool_size=(8, 8))(landmark_16x16)
-    reshape_16x16_landmark = Reshape((-1, 52), name='reshape_16x16_landmark')(avg_16x16_landmark)
+    reshape_16x16_landmark = Reshape((-1, feature), name='reshape_16x16_landmark')(avg_16x16_landmark)
 
     predictions = Average()([reshape_16x16_landmark, reshape_8x8_landmark])   
 

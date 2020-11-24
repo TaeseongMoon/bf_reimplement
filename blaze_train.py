@@ -40,6 +40,12 @@ variances = [0.1, 0.1, 0.2, 0.2] # The variances by which the encoded target coo
 normalize_coords = True
 batch_size = 32 # Change the batch size if you like, or if you run into GPU memory issues.
 # 1: Build the Keras model.
+select_keypoint = [9,11,13,14,21,23,24,25,26]
+output_index = []
+for i in select_keypoint:
+    output_index.append(i*2-2)
+    output_index.append(i*2-1)
+
 with tf.device('/gpu:0'):
     K.clear_session() # Clear previous models from memory.
 
@@ -55,6 +61,7 @@ with tf.device('/gpu:0'):
                     variances=variances,
                     normalize_coords=normalize_coords,
                     subtract_mean=mean_color,
+                    feature=len(output_index),
                     swap_channels=swap_channels)
 
     # 2: Load some weights into the model.
@@ -72,8 +79,8 @@ with tf.device('/gpu:0'):
     #sgd = SGD(lr=0.001, momentum=0.9, decay=0.0, nesterov=False)
 
     def mse (y_true, y_pred):
-        return K.mean(K.square(y_pred -y_true[...,:52]), axis=-1)
-    ssd_loss = SSDLoss(neg_pos_ratio=3, alpha=1.0)
+        return K.mean(K.square(y_pred -y_true[...,:len(output_index)]), axis=-1)
+    ssd_loss = SSDLoss(neg_pos_ratio=3, alpha=1.0, select_keypoint_labels_len=len(output_index))
 
     model.compile(optimizer=adam, loss=ssd_loss.compute_loss, metrics=[mse])
     model.summary()
@@ -87,10 +94,6 @@ with tf.device('/gpu:0'):
 
     # 1: Instantiate two `DataGenerator` objects: One for training, one for validation.
 
-    # Optional: If you have enough memory, consider loading the images into memory for the reasons explained above.
-
-    #train_dataset = DataGenerator(load_images_into_memory=True, hdf5_dataset_path='wider_train_new.h5')
-    #val_dataset = DataGenerator(load_images_into_memory=True, hdf5_dataset_path='wider_val_new_v2.h5')
     train_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None, fix_image_ratio=True)
     val_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None, fix_image_ratio=True)
     # 2: Parse the image and label lists for the training and validation datasets.
@@ -115,21 +118,12 @@ with tf.device('/gpu:0'):
                             include_classes='all')
 
 
-    # Optional: Convert the dataset into an HDF5 dataset. This will require more disk space, but will
-    # speed up the training. Doing this is not relevant in case you activated the `load_images_into_memory`
-    # option in the constructor, because in that cas the images are in memory already anyway. If you don't
-    # want to create HDF5 datasets, comment out the subsequent two function calls.
-    
-    
-
-    # 4: Set the image transformations for pre-processing and data augmentation options.
-
-    # For the training generator:
 
     ssd_data_augmentation = SSDDataAugmentation(img_height=img_height,
                                                 img_width=img_width,
                                                 background=mean_color,
-                                                fix_image_ratio=True)
+                                                random_crop_prob=0.5,
+                                                rotate_prob=0.4)
 
     # For the validation generator:
     convert_to_3_channels = ConvertTo3Channels()
@@ -161,6 +155,7 @@ with tf.device('/gpu:0'):
                                             shuffle=True,
                                             transformations=[ssd_data_augmentation],
                                             label_encoder=ssd_input_encoder,
+                                            select_keypoint_label=output_index,
                                             returns={'processed_images',
                                                     'encoded_labels'},
                                             keep_images_without_gt=False)
@@ -170,6 +165,7 @@ with tf.device('/gpu:0'):
                                         transformations=[convert_to_3_channels,
                                                         resize],
                                         label_encoder=ssd_input_encoder,
+                                        select_keypoint_label=output_index,
                                         returns={'processed_images',
                                                 'encoded_labels'},
                                         keep_images_without_gt=False)
@@ -196,7 +192,7 @@ with tf.device('/gpu:0'):
 
     callbacks = [model_checkpoint,
                 # csv_logger,
-                # tensorboard_callback,
+                tensorboard_callback,
                 terminate_on_nan]
 
     initial_epoch   = 0

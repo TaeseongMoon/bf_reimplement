@@ -26,15 +26,6 @@ import keras.backend as K
 from keras.layers import Layer, InputSpec
 
 class DecodeDetections(Layer):
-    '''
-    A Keras layer to decode the raw SSD prediction output.
-
-    Input shape:
-        3D tensor of shape `(batch_size, n_boxes, n_classes + 12)`.
-
-    Output shape:
-        3D tensor of shape `(batch_size, top_k, 6)`.
-    '''
 
     def __init__(self,
                  confidence_thresh=0.01,
@@ -46,33 +37,7 @@ class DecodeDetections(Layer):
                  img_height=None,
                  img_width=None,
                  **kwargs):
-        '''
-        All default argument values follow the Caffe implementation.
 
-        Arguments:
-            confidence_thresh (float, optional): A float in [0,1), the minimum classification confidence in a specific
-                positive class in order to be considered for the non-maximum suppression stage for the respective class.
-                A lower value will result in a larger part of the selection process being done by the non-maximum suppression
-                stage, while a larger value will result in a larger part of the selection process happening in the confidence
-                thresholding stage.
-            iou_threshold (float, optional): A float in [0,1]. All boxes with a Jaccard similarity of greater than `iou_threshold`
-                with a locally maximal box will be removed from the set of predictions for a given class, where 'maximal' refers
-                to the box score.
-            top_k (int, optional): The number of highest scoring predictions to be kept for each batch item after the
-                non-maximum suppression stage.
-            nms_max_output_size (int, optional): The maximum number of predictions that will be left after performing non-maximum
-                suppression.
-            coords (str, optional): The box coordinate format that the model outputs. Must be 'centroids'
-                i.e. the format `(cx, cy, w, h)` (box center coordinates, width, and height). Other coordinate formats are
-                currently not supported.
-            normalize_coords (bool, optional): Set to `True` if the model outputs relative coordinates (i.e. coordinates in [0,1])
-                and you wish to transform these relative coordinates back to absolute coordinates. If the model outputs
-                relative coordinates, but you do not want to convert them back to absolute coordinates, set this to `False`.
-                Do not set this to `True` if the model already outputs absolute coordinates, as that would result in incorrect
-                coordinates. Requires `img_height` and `img_width` if set to `True`.
-            img_height (int, optional): The height of the input images. Only needed if `normalize_coords` is `True`.
-            img_width (int, optional): The width of the input images. Only needed if `normalize_coords` is `True`.
-        '''
         if K.backend() != 'tensorflow':
             raise TypeError("This layer only supports TensorFlow at the moment, but you are using the {} backend.".format(K.backend()))
 

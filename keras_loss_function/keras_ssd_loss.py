@@ -28,7 +28,8 @@ class SSDLoss:
     def __init__(self,
                  neg_pos_ratio=3,
                  n_neg_min=0,
-                 alpha=1.0
+                 alpha=1.0,
+                 select_keypoint_labels_len=52
                  ):
         '''
         Arguments:
@@ -51,6 +52,7 @@ class SSDLoss:
         self.neg_pos_ratio = neg_pos_ratio
         self.n_neg_min = n_neg_min
         self.alpha = alpha
+        self.select_keypoint_labels_len=select_keypoint_labels_len
         # self.anchor = [-float(x) for x in open('anchors.txt').readline().split(',') if x != '']
     def smooth_L1_loss(self, y_true, y_pred):
         '''
@@ -136,8 +138,8 @@ class SSDLoss:
         
         # 1: Compute the losses for class and box predictions for every box.
         
-        landmark_loss = tf.cast(self.smooth_L1_loss(tf.multiply(y_true[..., :52], y_true[...,52:]),
-                                                    tf.multiply(y_pred, y_true[...,52:])), tf.float32)
+        landmark_loss = tf.cast(self.smooth_L1_loss(tf.multiply(y_true[..., :self.select_keypoint_labels_len], y_true[...,self.select_keypoint_labels_len:]),
+                                                    tf.multiply(y_pred, y_true[...,self.select_keypoint_labels_len:])), tf.float32)
 
         # loc_loss = tf.reduce_sum(input_tensor=localization_loss * positives, axis=-1) # Tensor of shape (batch_size,)
         land_loss = tf.reduce_sum(input_tensor=landmark_loss, axis=-1)

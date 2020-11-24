@@ -412,9 +412,9 @@ class DataGenerator:
                     h = int(box[4]) - int(box[2])
                     cx = int(box[1]) + w//2
                     cy = int(box[2]) + h//2
-                    x_diff = (cx-128) - int(box[1])
-                    y_diff = (cy-128) - int(box[2])
-                    current_bbox.append([cx-128,cy-128,cx+128,cy+128])
+                    x_diff = (cx-140) - int(box[1])
+                    y_diff = (cy-140) - int(box[2])
+                    current_bbox.append([cx-140,cy-140,cx+140,cy+140])
                     new_label=[[str(int(box[x]) - x_diff), str(int(box[x+1]) - y_diff)] if box[x] > -1 else [box[x], box[x+1]] for x in range(6,len(box),2)]
                     new_label = [str(box[5])]+[y for x in new_label for y in x]
                     current_labels.append(new_label)
@@ -454,9 +454,9 @@ class DataGenerator:
                     h = int(box[4]) - int(box[2])
                     cx = int(box[1]) + w//2
                     cy = int(box[2]) + h//2
-                    x_diff = (cx-128) - int(box[1])
-                    y_diff = (cy-128) - int(box[2])
-                    current_bbox.append([cx-128,cy-128,cx+128,cy+128])
+                    x_diff = (cx-140) - int(box[1])
+                    y_diff = (cy-140) - int(box[2])
+                    current_bbox.append([cx-140,cy-140,cx+140,cy+140])
                     new_label=[[str(int(box[x]) - x_diff), str(int(box[x+1]) - y_diff)] if box[x] > -1 else [box[x], box[x+1]] for x in range(6,len(box),2)]
                     new_label = [str(box[5])]+[y for x in new_label for y in x]
                     current_labels.append(new_label)
@@ -500,6 +500,7 @@ class DataGenerator:
                  shuffle=True,
                  transformations=[],
                  label_encoder=None,
+                 select_keypoint_label=[],
                  returns={'processed_images', 'encoded_labels'},
                  keep_images_without_gt=False,
                  degenerate_box_handling='remove'):
@@ -612,7 +613,6 @@ class DataGenerator:
                 batch_filenames = self.filenames[current:current+batch_size]
                 for filename in batch_filenames:
                     with Image.open(filename) as image:
-                        
                         bbox = self.bboxes[filename]
                         bbox = tuple(map(int,bbox[0]))
                         image = image.crop(bbox)
@@ -709,8 +709,7 @@ class DataGenerator:
             # CAUTION: Converting `batch_X` into an array will result in an empty batch if the images have varying sizes
             #          or varying numbers of channels. At this point, all images must have the same size and the same
             #          number of channels.
-            import pdb
-            pdb.set_trace()
+
             batch_X = np.array(batch_X)
             if (batch_X.size == 0):
                 raise DegenerateBatchError("You produced an empty batch. This might be because the images in the batch vary " +
@@ -725,9 +724,9 @@ class DataGenerator:
             if not (label_encoder is None or self.labels is None):
 
                 if ('matched_anchors' in returns) and isinstance(label_encoder, SSDInputEncoder):
-                    batch_y_encoded, batch_matched_anchors = label_encoder(batch_y, diagnostics=True)
+                    batch_y_encoded, batch_matched_anchors = label_encoder(batch_y, select_keypoint_label, diagnostics=True)
                 else:
-                    batch_y_encoded = label_encoder(batch_y, diagnostics=False)
+                    batch_y_encoded = label_encoder(batch_y, select_keypoint_label, diagnostics=False)
                     batch_matched_anchors = None
 
             else:
