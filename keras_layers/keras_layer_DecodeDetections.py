@@ -28,12 +28,8 @@ from keras.layers import Layer, InputSpec
 class DecodeDetections(Layer):
 
     def __init__(self,
-                 confidence_thresh=0.01,
-                 iou_threshold=0.45,
-                 top_k=200,
-                 nms_max_output_size=400,
-                 coords='centroids',
                  normalize_coords=True,
+                 feature=52,
                  img_height=None,
                  img_width=None,
                  **kwargs):
@@ -44,27 +40,16 @@ class DecodeDetections(Layer):
         if normalize_coords and ((img_height is None) or (img_width is None)):
             raise ValueError("If relative box coordinates are supposed to be converted to absolute coordinates, the decoder needs the image size in order to decode the predictions, but `img_height == {}` and `img_width == {}`".format(img_height, img_width))
 
-        if coords != 'centroids':
-            raise ValueError("The DetectionOutput layer currently only supports the 'centroids' coordinate format.")
-
         # We need these members for the config.
-        self.confidence_thresh = confidence_thresh
-        self.iou_threshold = iou_threshold
-        self.top_k = top_k
-        self.normalize_coords = normalize_coords
+
         self.img_height = img_height
         self.img_width = img_width
-        self.coords = coords
-        self.nms_max_output_size = nms_max_output_size
-
+        self.normalize_coords = normalize_coords
+        self.feature = feature
         # We need these members for TensorFlow.
-        self.tf_confidence_thresh = tf.constant(self.confidence_thresh, name='confidence_thresh')
-        self.tf_iou_threshold = tf.constant(self.iou_threshold, name='iou_threshold')
-        self.tf_top_k = tf.constant(self.top_k, name='top_k')
         self.tf_normalize_coords = tf.constant(self.normalize_coords, name='normalize_coords')
         self.tf_img_height = tf.constant(self.img_height, dtype=tf.float32, name='img_height')
         self.tf_img_width = tf.constant(self.img_width, dtype=tf.float32, name='img_width')
-        self.tf_nms_max_output_size = tf.constant(self.nms_max_output_size, name='nms_max_output_size')
         
         super(DecodeDetections, self).__init__(**kwargs)
 
@@ -83,14 +68,14 @@ class DecodeDetections(Layer):
 
         def normalized_coords():
             key_points = []
-            for i in range(0,51,2):
+            for i in range(0,self.feature,2):
                 key_points.append(tf.expand_dims(y_pred[..., i] *self.tf_img_width, axis=-1))
                 key_points.append(tf.expand_dims(y_pred[..., i+1] * self.tf_img_height, axis=-1))
             
             return  key_points
         def non_normalized_coords():
             key_points = []
-            for i in range(0,51,2):
+            for i in range(0,self.feature,2):
                 key_points.append(tf.expand_dims(y_pred[..., i], axis=-1))
                 key_points.append(tf.expand_dims(y_pred[..., i+1], axis=-1))
             
@@ -100,29 +85,6 @@ class DecodeDetections(Layer):
 
         
         y_pred = tf.concat(values=key_points, axis=-1)
-        
-        #####################################################################################
-        # 2. Perform confidence thresholding, per-class non-maximum suppression, and
-        #    top-k filtering.
-        #####################################################################################
+
         return y_pred
         
-
-    def compute_output_shape(self, input_shape):
-        batch_size, n_boxes, last_axis = input_shape
-        
-        return (batch_size, self.tf_top_k, 12) # Last axis: (class_ID, confidence, 4 box coordinates)
-
-    def get_config(self):
-        config = {
-            'confidence_thresh': self.confidence_thresh,
-            'iou_threshold': self.iou_threshold,
-            'top_k': self.top_k,
-            'nms_max_output_size': self.nms_max_output_size,
-            'coords': self.coords,
-            'normalize_coords': self.normalize_coords,
-            'img_height': self.img_height,
-            'img_width': self.img_width,
-        }
-        base_config = super(DecodeDetections, self).get_config()
-        return dict(list(base_config.items()) + list(config.items()))

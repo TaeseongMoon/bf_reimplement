@@ -1,0 +1,1 @@
+python live_demo.py --model checkpoint/DB_Set2_with_general_glasses_Avg_2Layer_epoch-109_loss-0.0292.h5 --video_path /data/Korea_Female_1/20200903_day_shadow_01/Class_3/clip/2_20200903_day_shadow_01_27.avi --save_path ./ --anchor_path anchor_256_fix.txt --gpu 1

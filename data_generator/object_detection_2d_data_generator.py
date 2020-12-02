@@ -48,7 +48,6 @@ except ImportError:
     warnings.warn("'pickle' module is missing. You won't be able to save parsed file lists and annotations as pickled files.")
 
 from ssd_encoder_decoder.ssd_input_encoder_blazeface import SSDInputEncoder
-from data_generator.object_detection_2d_image_boxes_validation_utils import BoxFilter
 
 class DegenerateBatchError(Exception):
     '''
@@ -65,19 +64,6 @@ class DatasetError(Exception):
     pass
 
 class DataGenerator:
-    '''
-    A generator to generate batches of samples and corresponding labels indefinitely.
-
-    Can shuffle the dataset consistently after each complete pass.
-
-    Currently provides three methods to parse annotation data: A general-purpose CSV parser,
-    an XML parser for the Pascal VOC datasets, and a JSON parser for the MS COCO datasets.
-    If the annotations of your dataset are in a format that is not supported by these parsers,
-    you could just add another parser method and still use this generator.
-
-    Can perform image transformations for data conversion and data augmentation,
-    for details please refer to the documentation of the `generate()` method.
-    '''
 
     def __init__(self,
                  load_images_into_memory=False,
@@ -94,52 +80,7 @@ class DataGenerator:
                                            'kp13_y','kp14_x','kp14_y','kp15_x','kp15_y','kp16_x','kp16_y','kp17_x','kp17_y','kp18_x','kp18_y','kp19_x','kp19_y','kp20_x','kp20_y','kp21_x',
                                            'kp21_y','kp22_x','kp22_y','kp23_x','kp23_y','kp24_x','kp24_y','kp25_x','kp25_y','kp26_x','kp26_y'),
                  verbose=True):
-        '''
-        Initializes the data generator. You can either load a dataset directly here in the constructor,
-        e.g. an HDF5 dataset, or you can use one of the parser methods to read in a dataset.
 
-        Arguments:
-            load_images_into_memory (bool, optional): If `True`, the entire dataset will be loaded into memory.
-                This enables noticeably faster data generation than loading batches of images into memory ad hoc.
-                Be sure that you have enough memory before you activate this option.
-            hdf5_dataset_path (str, optional): The full file path of an HDF5 file that contains a dataset in the
-                format that the `create_hdf5_dataset()` method produces. If you load such an HDF5 dataset, you
-                don't need to use any of the parser methods anymore, the HDF5 dataset already contains all relevant
-                data.
-            filenames (string or list, optional): `None` or either a Python list/tuple or a string representing
-                a filepath. If a list/tuple is passed, it must contain the file names (full paths) of the
-                images to be used. Note that the list/tuple must contain the paths to the images,
-                not the images themselves. If a filepath string is passed, it must point either to
-                (1) a pickled file containing a list/tuple as described above. In this case the `filenames_type`
-                argument must be set to `pickle`.
-                Or
-                (2) a text file. Each line of the text file contains the file name (basename of the file only,
-                not the full directory path) to one image and nothing else. In this case the `filenames_type`
-                argument must be set to `text` and you must pass the path to the directory that contains the
-                images in `images_dir`.
-            filenames_type (string, optional): In case a string is passed for `filenames`, this indicates what
-                type of file `filenames` is. It can be either 'pickle' for a pickled file or 'text' for a
-                plain text file.
-            images_dir (string, optional): In case a text file is passed for `filenames`, the full paths to
-                the images will be composed from `images_dir` and the names in the text file, i.e. this
-                should be the directory that contains the images to which the text file refers.
-                If `filenames_type` is not 'text', then this argument is irrelevant.
-            labels (string or list, optional): `None` or either a Python list/tuple or a string representing
-                the path to a pickled file containing a list/tuple. The list/tuple must contain Numpy arrays
-                that represent the labels of the dataset.
-            image_ids (string or list, optional): `None` or either a Python list/tuple or a string representing
-                the path to a pickled file containing a list/tuple. The list/tuple must contain the image
-                IDs of the images in the dataset.
-            eval_neutral (string or list, optional): `None` or either a Python list/tuple or a string representing
-                the path to a pickled file containing a list/tuple. The list/tuple must contain for each image
-                a list that indicates for each ground truth object in the image whether that object is supposed
-                to be treated as neutral during an evaluation.
-            labels_output_format (list, optional): A list of five strings representing the desired order of the five
-                items class ID, xmin, ymin, xmax, ymax in the generated ground truth data (if any). The expected
-                strings are 'xmin', 'ymin', 'xmax', 'ymax', 'class_id'.
-            verbose (bool, optional): If `True`, prints out the progress for some constructor operations that may
-                take a bit longer.
-        '''
         self.labels_output_format = labels_output_format
         self.labels_format={'class_id': labels_output_format.index('class_id'),
                             'kp1_x': labels_output_format.index('kp1_x'),
@@ -269,55 +210,6 @@ class DataGenerator:
         else:
             self.hdf5_dataset = None
 
-    def load_hdf5_dataset(self, verbose=True):
-        '''
-        Loads an HDF5 dataset that is in the format that the `create_hdf5_dataset()` method
-        produces.
-
-        Arguments:
-            verbose (bool, optional): If `True`, prints out the progress while loading
-                the dataset.
-
-        Returns:
-            None.
-        '''
-
-        self.hdf5_dataset = h5py.File(self.hdf5_dataset_path, 'r')
-        self.dataset_size = len(self.hdf5_dataset['images'])
-        self.dataset_indices = np.arange(self.dataset_size, dtype=np.int32) # Instead of shuffling the HDF5 dataset or images in memory, we will shuffle this index list.
-
-        if self.load_images_into_memory:
-            self.images = []
-            if verbose: tr = trange(self.dataset_size, desc='Loading images into memory', file=sys.stdout)
-            else: tr = range(self.dataset_size)
-            for i in tr:
-                self.images.append(self.hdf5_dataset['images'][i].reshape(self.hdf5_dataset['image_shapes'][i]))
-
-        if self.hdf5_dataset.attrs['has_labels']:
-            self.labels = []
-            labels = self.hdf5_dataset['labels']
-            label_shapes = self.hdf5_dataset['label_shapes']
-            if verbose: tr = trange(self.dataset_size, desc='Loading labels', file=sys.stdout)
-            else: tr = range(self.dataset_size)
-            for i in tr:
-                self.labels.append(labels[i].reshape(label_shapes[i]))
-
-        if self.hdf5_dataset.attrs['has_image_ids']:
-            self.image_ids = []
-            image_ids = self.hdf5_dataset['image_ids']
-            if verbose: tr = trange(self.dataset_size, desc='Loading image IDs', file=sys.stdout)
-            else: tr = range(self.dataset_size)
-            for i in tr:
-                self.image_ids.append(image_ids[i])
-
-        if self.hdf5_dataset.attrs['has_eval_neutral']:
-            self.eval_neutral = []
-            eval_neutral = self.hdf5_dataset['eval_neutral']
-            if verbose: tr = trange(self.dataset_size, desc='Loading evaluation-neutrality annotations', file=sys.stdout)
-            else: tr = range(self.dataset_size)
-            for i in tr:
-                self.eval_neutral.append(eval_neutral[i])
-
     def parse_csv(self,
                   images_dir,
                   labels_filename,
@@ -327,36 +219,6 @@ class DataGenerator:
                   ret=False,
                   fix_image_ratio=True,
                   verbose=True):
-        '''
-        Arguments:
-            images_dir (str): The path to the directory that contains the images.
-            labels_filename (str): The filepath to a CSV file that contains one ground truth bounding box per line
-                and each line contains the following six items: image file name, class ID, xmin, xmax, ymin, ymax.
-                The six items do not have to be in a specific order, but they must be the first six columns of
-                each line. The order of these items in the CSV file must be specified in `input_format`.
-                The class ID is an integer greater than zero. Class ID 0 is reserved for the background class.
-                `xmin` and `xmax` are the left-most and right-most absolute horizontal coordinates of the box,
-                `ymin` and `ymax` are the top-most and bottom-most absolute vertical coordinates of the box.
-                The image name is expected to be just the name of the image file without the directory path
-                at which the image is located.
-            input_format (list): A list of six strings representing the order of the six items
-                image file name, class ID, xmin, xmax, ymin, ymax in the input CSV file. The expected strings
-                are 'image_name', 'xmin', 'xmax', 'ymin', 'ymax', 'class_id'.
-            include_classes (list, optional): Either 'all' or a list of integers containing the class IDs that
-                are to be included in the dataset. If 'all', all ground truth boxes will be included in the dataset.
-            random_sample (float, optional): Either `False` or a float in `[0,1]`. If this is `False`, the
-                full dataset will be used by the generator. If this is a float in `[0,1]`, a randomly sampled
-                fraction of the dataset will be used, where `random_sample` is the fraction of the dataset
-                to be used. For example, if `random_sample = 0.2`, 20 precent of the dataset will be randomly selected,
-                the rest will be ommitted. The fraction refers to the number of images, not to the number
-                of boxes, i.e. each image that will be added to the dataset will always be added with all
-                of its boxes.
-            ret (bool, optional): Whether or not to return the outputs of the parser.
-            verbose (bool, optional): If `True`, prints out the progress for operations that may take a bit longer.
-
-        Returns:
-            None by default, optionally lists for whichever are available of images, image filenames, labels, and image IDs.
-        '''
 
         # Set class members.
         self.images_dir = images_dir
@@ -374,7 +236,6 @@ class DataGenerator:
         self.labels = []
         self.bboxes = {}
         # First, just read in the CSV file lines and sort them.
-
         data = []
         
         with open(self.labels_filename, newline='') as csvfile:
@@ -403,7 +264,6 @@ class DataGenerator:
         current_image_id = data[0][0].split('.')[0] # The image ID will be the portion of the image name before the first dot.
         current_labels = [] # The list where we collect all ground truth boxes for a given image
         current_bbox = []
-        add_to_dataset = False
         
         for i, box in enumerate(data):
             if box[0] == current_file: # If this box (i.e. this line of the CSV file) belongs to the current image file
@@ -502,8 +362,7 @@ class DataGenerator:
                  label_encoder=None,
                  select_keypoint_label=[],
                  returns={'processed_images', 'encoded_labels'},
-                 keep_images_without_gt=False,
-                 degenerate_box_handling='remove'):
+                 keep_images_without_gt=False):
 
         if self.dataset_size == 0:
             raise DatasetError("Cannot generate batches because you did not load a dataset.")
@@ -542,12 +401,6 @@ class DataGenerator:
             shuffled_objects = sklearn.utils.shuffle(*objects_to_shuffle)
             for i in range(len(objects_to_shuffle)):
                 objects_to_shuffle[i][:] = shuffled_objects[i]
-
-        if degenerate_box_handling == 'remove':
-            box_filter = BoxFilter(check_overlap=False,
-                                   check_min_area=False,
-                                   check_degenerate=True,
-                                   labels_format=self.labels_format)
 
         # Override the labels formats of all the transformations to make sure they are set correctly.
         if not (self.labels is None):
@@ -589,22 +442,10 @@ class DataGenerator:
             # Get the images, (maybe) image IDs, (maybe) labels, etc. for this batch.
             #########################################################################################
 
-            # We prioritize our options in the following order:
-            # 1) If we have the images already loaded in memory, get them from there.
-            # 2) Else, if we have an HDF5 dataset, get the images from there.
-            # 3) Else, if we have neither of the above, we'll have to load the individual image
-            #    files from disk.
             batch_indices = self.dataset_indices[current:current+batch_size]
             if not (self.images is None):
                 for i in batch_indices:
                     batch_X.append(self.images[i])
-                if not (self.filenames is None):
-                    batch_filenames = self.filenames[current:current+batch_size]
-                else:
-                    batch_filenames = None
-            elif not (self.hdf5_dataset is None):
-                for i in batch_indices:
-                    batch_X.append(self.hdf5_dataset['images'][i].reshape(self.hdf5_dataset['image_shapes'][i]))
                 if not (self.filenames is None):
                     batch_filenames = self.filenames[current:current+batch_size]
                 else:

@@ -1,5 +1,4 @@
 import tensorflow as tf
-import math
 import os
 from datetime import datetime
 from keras.optimizers import Adam, SGD
@@ -10,20 +9,15 @@ from math import ceil
 import numpy as np
 from models.keras_blazeface import blazeface
 from keras_loss_function.keras_ssd_loss import SSDLoss
-from keras_layers.keras_layer_DecodeDetections import DecodeDetections
-from keras_layers.keras_layer_L2Normalization import L2Normalization
-
 from ssd_encoder_decoder.ssd_input_encoder_blazeface import SSDInputEncoder
-from ssd_encoder_decoder.ssd_output_decoder_blazeface import decode_detections, decode_detections_fast
 
 from data_generator.object_detection_2d_data_generator import DataGenerator
 from data_generator.object_detection_2d_geometric_ops import Resize
 from data_generator.object_detection_2d_photometric_ops import ConvertTo3Channels
 from data_generator.data_augmentation_chain_original_ssd import SSDDataAugmentation
-from data_generator.object_detection_2d_misc_utils import apply_inverse_transforms
-import os
+
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 img_height = 256 # Height of the model input images
 img_width = 256 # Width of the model input images
@@ -31,16 +25,10 @@ img_channels = 3 # Number of color channels of the model input images
 mean_color = [107, 105, 109] # The per-channel mean of the images in the dataset. Do not change this value if you're using any of the pre-trained weights.
 swap_channels = [2, 1, 0] # The color channel order in the original SSD is BGR, so we'll have the model reverse the color channel order of the input images.
 n_classes = 1 # Number of positive classes, e.g. 20 for Pascal VOC, 80 for MS COCO
-scales = [[0.2]]
-aspect_ratios = [[1.0]] # The anchor box aspect ratios
-steps = [64] # The space between two adjacent anchor box center points for each predictor layer.
-offsets = None # The offsets of the first anchor box center points from the top and left borders of the image as a fraction of the step size for each predictor layer.
-clip_boxes = False # Whether or not to clip the anchor boxes to lie entirely within the image boundaries
-variances = [0.1, 0.1, 0.2, 0.2] # The variances by which the encoded target coordinates are divided as in the original implementation
 normalize_coords = True
 batch_size = 32 # Change the batch size if you like, or if you run into GPU memory issues.
 # 1: Build the Keras model.
-select_keypoint = [9,11,13,14,21,23,24,25,26]
+select_keypoint = [9, 11, 13, 14, 19, 21, 23, 24, 25, 26]
 output_index = []
 for i in select_keypoint:
     output_index.append(i*2-2)
@@ -52,28 +40,10 @@ with tf.device('/gpu:0'):
     model = blazeface(image_size=(img_height, img_width, img_channels),
                     n_classes=n_classes,
                     mode='training',
-                    l2_regularization=0.0005,
-                    scales=scales,
-                    aspect_ratios_per_layer=aspect_ratios,
-                    steps=steps,
-                    offsets=offsets,
-                    clip_boxes=clip_boxes,
-                    variances=variances,
                     normalize_coords=normalize_coords,
                     subtract_mean=mean_color,
                     feature=len(output_index),
                     swap_channels=swap_channels)
-
-    # 2: Load some weights into the model.
-
-    # TODO: Set the path to the weights you want to load.
-    # weights_path = 'blazeface_fddb_07+12_epoch-183_loss-3.9408_val_loss-2.9432.h5'
-
-    # model.load_weights(weights_path, by_name=True)
-
-    # 3: Instantiate an optimizer and the SSD loss function and compile the model.
-    #    If you want to follow the original Caffe implementation, use the preset SGD
-    #    optimizer, otherwise I'd recommend the commented-out Adam optimizer.
 
     adam = Adam(0.001)
     #sgd = SGD(lr=0.001, momentum=0.9, decay=0.0, nesterov=False)
@@ -87,9 +57,8 @@ with tf.device('/gpu:0'):
 
     train_images_dir = "/data/"
     val_images_dir = "/data/"
-    train_anno_file = "/data/tsmoon_set/train_setting_2.csv"
-    val_anno_file = "/data/tsmoon_set/valid_setting_2.csv"
-    # val_anno_file = "./data/valid_annos_split.csv"
+    train_labels_filename = "/data/tsmoon_set/train_with_general_glasses.csv"
+    val_labels_filename = "/data/tsmoon_set/valid_with_general_glasses.csv"
     
 
     # 1: Instantiate two `DataGenerator` objects: One for training, one for validation.
@@ -98,9 +67,6 @@ with tf.device('/gpu:0'):
     val_dataset = DataGenerator(load_images_into_memory=None, hdf5_dataset_path=None, fix_image_ratio=True)
     # 2: Parse the image and label lists for the training and validation datasets.
 
-    # Ground truth
-    train_labels_filename = train_anno_file
-    val_labels_filename   = val_anno_file
 
     train_dataset.parse_csv(images_dir=train_images_dir,
                             labels_filename=train_labels_filename,
@@ -117,8 +83,6 @@ with tf.device('/gpu:0'):
                                             'kp21_y','kp22_x','kp22_y','kp23_x','kp23_y','kp24_x','kp24_y','kp25_x','kp25_y','kp26_x','kp26_y','class_id'], # This is the order of the first six columns in the CSV file that contains the labels for your dataset. If your labels are in XML format, maybe the XML parser will be helpful, check the documentation.
                             include_classes='all')
 
-
-
     ssd_data_augmentation = SSDDataAugmentation(img_height=img_height,
                                                 img_width=img_width,
                                                 background=mean_color,
@@ -132,21 +96,9 @@ with tf.device('/gpu:0'):
     # 5: Instantiate an encoder that can encode ground truth labels into the format needed by the SSD loss function.
 
     # The encoder constructor needs the spatial dimensions of the model's predictor layers to create the anchor boxes.
-#     predictor_sizes = [model.get_layer('classes16x16').output_shape[1:3]]
-    predictor_sizes = np.array([[16,16]])
+
     ssd_input_encoder = SSDInputEncoder(img_height=img_height,
                                         img_width=img_width,
-                                        n_classes=n_classes,
-                                        predictor_sizes=predictor_sizes,
-                                        scales=scales,
-                                        aspect_ratios_per_layer=aspect_ratios,
-                                        steps=steps,
-                                        offsets=offsets,
-                                        clip_boxes=clip_boxes,
-                                        variances=variances,
-                                        matching_type='multi',
-                                        pos_iou_threshold=0.5,
-                                        neg_iou_limit=0.5,
                                         normalize_coords=normalize_coords)
 
     # 6: Create the generator handles that will be passed to Keras' `fit_generator()` function.
@@ -169,14 +121,13 @@ with tf.device('/gpu:0'):
                                         returns={'processed_images',
                                                 'encoded_labels'},
                                         keep_images_without_gt=False)
-
     # Get the number of samples in the training and validations datasets.
     train_dataset_size = train_dataset.get_dataset_size()
     val_dataset_size   = val_dataset.get_dataset_size()
     print("Number of images in the training dataset:\t{:>6}".format(train_dataset_size))
     print("Number of images in the validation dataset:\t{:>6}".format(val_dataset_size))
 
-    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/TEST_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
+    model_checkpoint = ModelCheckpoint(filepath='./checkpoint/DB_Set2_with_general_glasses_Avg_2Layer_epoch-{epoch:02d}_loss-{loss:.4f}.h5',
                                     monitor='val_loss',
                                     verbose=1,
                                     save_best_only=True,
@@ -185,18 +136,17 @@ with tf.device('/gpu:0'):
                                     period=1)
 
 
-    log_dir = './logs/scalars/'+ 'TEST_'+datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = './logs/scalars/'+ 'DB_Set2_with_general_glass_2Layer_'+datetime.now().strftime("%Y%m%d-%H%M%S")
        
     tensorboard_callback = TensorBoard(log_dir=log_dir)
     terminate_on_nan = TerminateOnNaN()
 
     callbacks = [model_checkpoint,
-                # csv_logger,
                 tensorboard_callback,
                 terminate_on_nan]
 
     initial_epoch   = 0
-    final_epoch     = 140
+    final_epoch     = 160
     steps_per_epoch = train_dataset_size // batch_size
 
     history = model.fit(train_generator,

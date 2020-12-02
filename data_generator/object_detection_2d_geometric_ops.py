@@ -1,28 +1,8 @@
-'''
-Various geometric image transformations for 2D object detection, both deterministic
-and probabilistic.
-
-Copyright (C) 2018 Pierluigi Ferrari
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-'''
 
 from __future__ import division
 import numpy as np
 import cv2
 import random
-
-from data_generator.object_detection_2d_image_boxes_validation_utils import BoxFilter, ImageValidator
 
 class Resize:
     '''

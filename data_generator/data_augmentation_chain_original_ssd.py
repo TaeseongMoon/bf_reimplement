@@ -19,7 +19,6 @@ limitations under the License.
 from __future__ import division
 import numpy as np
 import cv2
-import inspect
 from random import randrange
 from data_generator.object_detection_2d_photometric_ops import ConvertColor, ConvertDataType, ConvertTo3Channels, RandomBrightness, RandomContrast, RandomHue, RandomSaturation, RandomChannelSwap
 from data_generator.object_detection_2d_geometric_ops import ResizeRandomInterp, RandomRotate
